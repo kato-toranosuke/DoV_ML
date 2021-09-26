@@ -495,6 +495,17 @@ def GetGccPhatAndTdoa(y1: List, y2: List, fs, max_delay: float = 0.000236, w: in
         音速[m/sec]
     distance : float, default 0.14
         マイク間距離
+
+    Returns
+    -------
+    gp_max_val : float
+        GCC-PHATの最大ピークの値
+    gp_max_ix : int
+        GCC-PHATの最大ピークのインデックス
+    gp_auc : float
+        GCC-PHATの曲線下面積
+    tdoa : float
+        TDOA
     '''
 
     # 最大ピークのインデックスを取得（時間空間）
