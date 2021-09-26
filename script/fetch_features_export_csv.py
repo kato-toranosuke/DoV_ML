@@ -48,8 +48,6 @@ def createCsv(filename: str = 'features.csv') -> None:
         # 特徴量を計算
         ff_gen = ff.FetchFeaturesFromDataset(DATASET_PATH)
         for rows in ff_gen:
-            if(num > 40):
-                break
             writer.writerows(rows)
             num += 1
 
