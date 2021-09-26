@@ -44,16 +44,23 @@ def createCsv(filename: str = 'features.csv') -> None:
         # 書き込む
         writer.writerow(header)
 
-        num = 0
+        num = 0 #　カウンター
         # 特徴量を計算
         ff_gen = ff.FetchFeaturesFromDataset(DATASET_PATH)
         for rows in ff_gen:
-            if(num > 3):
+            if(num > 40):
                 break
             writer.writerows(rows)
             num += 1
 
+            # カウント確認
+            if(num % 10 == 0):
+                print(f'count: {num}')
 
+            # 100ループ毎にデータをバッファからディスク上のファイルに書き込む
+            if(num % 20 == 0):
+                print(f'flush data to a csv file: {filename}.')
+                f.flush()
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
