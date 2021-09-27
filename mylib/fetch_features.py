@@ -130,8 +130,8 @@ def FetchFeaturesFromDataset(DATASET_PATH: str = '../../dataset'):
                         third_dir_name = polar_position_id
                         for utterance_id in utterances:
                             for dov_angle in angles:
-                                # idが520以上で実行する
-                                if(id < 520):
+                                # idが13976以上で実行する
+                                if(id < 13976):
                                     id += 4
                                     continue
 
