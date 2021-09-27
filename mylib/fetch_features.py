@@ -131,13 +131,10 @@ def FetchFeaturesFromDataset(DATASET_PATH: str = '../../dataset'):
                         for utterance_id in utterances:
                             for dov_angle in angles:
                                 # idが520以上で実行する
-                                # if(id > 4):
-                                #     break
                                 if(id < 520):
                                     id += 4
                                     continue
 
-                                # file_paths = []
                                 # 特徴量をまとめる配列
                                 rows = []
                                 # 音声データを格納する
@@ -147,7 +144,6 @@ def FetchFeaturesFromDataset(DATASET_PATH: str = '../../dataset'):
                                 for mic_channel in mic_channels:
                                     filename = utterance_id + '_' + dov_angle + '_' + str(mic_channel) + '.wav'
                                     file_path = DATASET_PATH + '/' + first_dir_name + '/' + second_dir_name + '/' + third_dir_name + '/' + filename
-                                    # file_paths.append(file_path)
 
                                     print(f'id: {id}, file path: {file_path}')
 
@@ -187,8 +183,6 @@ def FetchFeaturesFromDataset(DATASET_PATH: str = '../../dataset'):
                                     v2 = voices[ix2][0]
                                     # サンプリング周波数を取得
                                     fs = voices[ix1][1]
-
-                                    print(pair)
 
                                     # GCC-PHATとTDOAを計算
                                     gp_max_val, gp_max_ix, gp_auc, tdoa = fff.GetGccPhatAndTdoa(v1, v2, fs)

@@ -456,8 +456,6 @@ def gcc_phat(sig, refsig, interp=16):
     # ゼロ割り対策
     R_ABS = np.abs(R)
     D = np.divide(R, R_ABS, out=np.zeros_like(R), where=R_ABS!=0)
-    print('D is....')
-    pprint.pprint(D)
 
     # 純粋なGCC-PHATの値はこれ。
     # gcc = np.fft.irfft(R / np.abs(R), n=(interp * n))
