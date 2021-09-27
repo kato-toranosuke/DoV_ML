@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-import fetch_features_func as fff
-import cis
-from fft import fft
+from . import fetch_features_func as fff
+from .fft import fft
+from . import cis
 from typing import List, Any, Union, Dict
 from srmrpy.srmr import *
 import itertools
@@ -73,13 +73,13 @@ def FetchFeaturesFromMonoData(v: List, fs: int, th: Union[int, float] = 7000, w:
     return [low_power, high_power, hlbr, coe1[0], coe1[1], coe3[0], coe3[1], coe3[2], coe3[3], ratio_max_to_10ms_ave_peaks, ratio_max_to_9th_ave_peaks, ac_std, ac_auc, diff_std, diff_auc, srmr_val]
 
 
-def FetchFeaturesFromDataset(DATASET_PATH: str = '../dataset/'):
+def FetchFeaturesFromDataset(DATASET_PATH: str = '../../dataset'):
     '''
     データセットの音声データから特徴量を抽出する関数
 
     Parameters
     ----------
-    DATASET_PATH : str, default '../dataset/'
+    DATASET_PATH : str, default '../dataset'
         datasetへのpath
 
     Returns
@@ -130,6 +130,13 @@ def FetchFeaturesFromDataset(DATASET_PATH: str = '../dataset/'):
                         third_dir_name = polar_position_id
                         for utterance_id in utterances:
                             for dov_angle in angles:
+                                # idが520以上で実行する
+                                # if(id > 4):
+                                #     break
+                                if(id < 520):
+                                    id += 4
+                                    continue
+
                                 # file_paths = []
                                 # 特徴量をまとめる配列
                                 rows = []
@@ -141,6 +148,8 @@ def FetchFeaturesFromDataset(DATASET_PATH: str = '../dataset/'):
                                     filename = utterance_id + '_' + dov_angle + '_' + str(mic_channel) + '.wav'
                                     file_path = DATASET_PATH + '/' + first_dir_name + '/' + second_dir_name + '/' + third_dir_name + '/' + filename
                                     # file_paths.append(file_path)
+
+                                    print(f'id: {id}, file path: {file_path}')
 
                                     # 音声データを読み込む
                                     v, fs = cis.wavread(file_path)
@@ -178,6 +187,8 @@ def FetchFeaturesFromDataset(DATASET_PATH: str = '../dataset/'):
                                     v2 = voices[ix2][0]
                                     # サンプリング周波数を取得
                                     fs = voices[ix1][1]
+
+                                    print(pair)
 
                                     # GCC-PHATとTDOAを計算
                                     gp_max_val, gp_max_ix, gp_auc, tdoa = fff.GetGccPhatAndTdoa(v1, v2, fs)

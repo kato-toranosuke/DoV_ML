@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-import fft_func
+from . import fft_func
 import math
 from typing import List, Any, Union, Dict
 

@@ -6,6 +6,7 @@ import math
 import heapq
 from scipy import signal
 import numpy as np
+import pprint
 
 # 型ヒントのサポート
 from typing import List, Any, Union, Dict
@@ -452,8 +453,15 @@ def gcc_phat(sig, refsig, interp=16):
     REFSIG = np.fft.rfft(refsig, n=n)
     R = SIG * np.conj(REFSIG)
 
+    # ゼロ割り対策
+    R_ABS = np.abs(R)
+    D = np.divide(R, R_ABS, out=np.zeros_like(R), where=R_ABS!=0)
+    print('D is....')
+    pprint.pprint(D)
+
     # 純粋なGCC-PHATの値はこれ。
-    gcc = np.fft.irfft(R / np.abs(R), n=(interp * n))
+    # gcc = np.fft.irfft(R / np.abs(R), n=(interp * n))
+    gcc = np.fft.irfft(D, n=(interp * n))
 
     return gcc, n
 
@@ -520,7 +528,7 @@ def GetGccPhatAndTdoa(y1: List, y2: List, fs, max_delay: float = 0.000236, w: in
 
     # max_tauは時間
     max_tau = distance / sound_spd
-
+    
     # GCC-PHATの計算
     gp, n = gcc_phat(delay_val1, delay_val2)
 
