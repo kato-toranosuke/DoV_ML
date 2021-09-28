@@ -101,13 +101,10 @@ def FetchFeaturesFromDataset(DATASET_PATH: str = '../../dataset'):
     room_ids = ['upstairs', 'downstairs']
     # 設置場所
     device_placement_ids = ['wall', 'nowall']
-    # ユーザとの距離
-    distances = [str(i) for i in range(1, 6, 2)]
-    # 極座標
-    polar_position_ids = []
-    for i, d in enumerate(['A', 'B', 'C']):
-        for p in range(0, 3):
-            polar_position_ids.append(d + str(p) + '_' + str(2*i+1) + '_' + str(45*p))
+    # ユーザ距離
+    distance_ids = ['A', 'B', 'C']
+    # ユーザ極座標
+    polar_angle_ids = [0, 1, 2]
     # DoV angles
     dov_angles = [str(i) for i in range(0, 360, 45)]
     # マイクチャンネル(音声認識用に使用しているchannel0のみ特徴量抽出に利用する。)
@@ -120,84 +117,102 @@ def FetchFeaturesFromDataset(DATASET_PATH: str = '../../dataset'):
     # ファイルのフェッチ
     id = 0
     for participant_id in participant_ids:
+        # 第1階層
         first_dir_name = participant_id
         for room_id in room_ids:
             for device_placement_id in device_placement_ids:
                 for session_id in session_ids:
-                    second_dir_name = participant_id + '_' + room_id + \
-                        '_' + device_placement_id + '_' + session_id
-                    for polar_position_id in polar_position_ids:
-                        third_dir_name = polar_position_id
-                        for utterance_id in utterance_ids:
-                            for dov_angle in dov_angles:
-                                # idが42360以上で実行する
-                                # if(id < 42360):
-                                #     id += 4
-                                #     continue
+                    # 第2階層
+                    second_dir_name = participant_id + '_' + room_id + '_' + device_placement_id + '_' + session_id
 
-                                # 特徴量をまとめる配列
-                                rows = []
-                                # 音声データを格納する
-                                voices = []
+                    for distance_ix, distance_id in enumerate(distance_ids):
+                        for polar_angle_ix, polar_angle_id in enumerate(polar_angle_ids):
+                            polar_position_id = distance_id + str(polar_angle_id)
+                            distance = 2*distance_ix + 1
+                            polar_angle = 45*polar_angle_ix
+                            # 第3階層
+                            third_dir_name = polar_position_id + '_' + distance + '_' + polar_angle
 
-                                # 音声認識用に使用しているchannel0のみ特徴量抽出に利用する。
-                                for mic_channel in mic_channels:
-                                    filename = utterance_id + '_' + dov_angle + '_' + str(mic_channel) + '.wav'
-                                    file_path = DATASET_PATH + '/' + first_dir_name + '/' + second_dir_name + '/' + third_dir_name + '/' + filename
+                            for utterance_id in utterance_ids:
+                                for dov_angle in dov_angles:
+                                    # idが42360以上で実行する
+                                    # if(id < 42360):
+                                    #     id += 1
+                                    #     continue
 
-                                    print(f'id: {id}, file path: {file_path}')
+                                    # 特徴量をまとめる配列
+                                    rows = []
+                                    # 音声データを格納する
+                                    voices = []
 
-                                    # 音声データを読み込む
-                                    v, fs = cis.wavread(file_path)
-                                    voices.append([v, fs])
+                                    ##########################
+                                    ### GCC-PHAT & TDOA以外 ###
+                                    ##########################
 
-                                    # 音声ファイルの各種属性値を配列に格納する
-                                    attr = [id, filename, participant_id, room_id, device_placement_id, session_id, polar_position_id, utterance_id, dov_angle, mic_channel]
-                                    # 特徴量を得る
-                                    # feature = FetchFeaturesFromMonoData(file_path)
-                                    feature = FetchFeaturesFromMonoData(v, fs)
-                                    # 属性情報と特徴量を合算->csvの1行分
-                                    row = attr + feature
+                                    # 音声認識用に使用しているchannel0のみ特徴量抽出に利用する。
+                                    for mic_channel in mic_channels:
+                                        filename = utterance_id + '_' + dov_angle + '_' + str(mic_channel) + '.wav'
+                                        file_path = DATASET_PATH + '/' + first_dir_name + '/' + second_dir_name + '/' + third_dir_name + '/' + filename
+
+                                        print(f'id: {id}, file path: {file_path}')
+
+                                        # 音声データを読み込む
+                                        v, fs = cis.wavread(file_path)
+                                        voices.append([v, fs])
+
+                                        # 音声ファイルの各種属性値を配列に格納する
+                                        attr = [id, filename, participant_id, room_id, device_placement_id, session_id, polar_position_id, distance, polar_angle, utterance_id, dov_angle, mic_channel]
+                                        # 特徴量を得る
+                                        # feature = FetchFeaturesFromMonoData(file_path)
+                                        feature = FetchFeaturesFromMonoData(v, fs)
+                                        # 属性情報と特徴量を合算->csvの1行分
+                                        row = attr + feature
+                                        
+                                        # 配列に追加
+                                        rows.append(row)
+
+                                        id = id + 1
+
+
+                                    #######################
+                                    ### GCC-PHAT & TDOA ###
+                                    #######################
                                     
-                                    # 配列に追加
-                                    rows.append(row)
+                                    # GCC-PHATの計算に使うためのマイクのペアを生成
+                                    
+                                    mic_ch_pairs = itertools.combinations(mic_channels, 2)
+                                    n_mic_channels = len(mic_channels) # マイクチャンネル数
+                                    n_gp_tdoa_features = 4 # GCC-PHATとTDOAの処理で得られる
+                                    # GCC-PHATの特徴量の配列(mic_channels * (特徴数*チャンネル数)の配列を作成)
+                                    gp_tdoa_features = np.zeros((n_mic_channels, n_gp_tdoa_features * n_mic_channels))
 
-                                    id = id + 1
-                                
-                                # GCC-PHATの計算に使うためのマイクのペアを生成
-                                mic_ch_pairs = itertools.combinations(mic_channels, 2)
-                                n_mic_channels = len(mic_channels) # マイクチャンネル数
-                                n_gp_tdoa_features = 4 # GCC-PHATとTDOAの処理で得られる
-                                # GCC-PHATの特徴量の配列(mic_channels * (特徴数*チャンネル数)の配列を作成)
-                                gp_tdoa_features = np.zeros((n_mic_channels, n_gp_tdoa_features * n_mic_channels))
+                                    for pair in mic_ch_pairs:
+                                        # マイクのチャンネル
+                                        mic_ch1 = pair[0]
+                                        mic_ch2 = pair[1]
+                                        # インデックスを計算（mic channelは1から始まる）
+                                        ix1 = mic_ch1 - 1
+                                        ix2 = mic_ch2 - 1
+                                        # 音声データを取得
+                                        v1 = voices[ix1][0]
+                                        v2 = voices[ix2][0]
+                                        # サンプリング周波数を取得
+                                        fs = voices[ix1][1]
 
-                                for pair in mic_ch_pairs:
-                                    # マイクのチャンネル
-                                    mic_ch1 = pair[0]
-                                    mic_ch2 = pair[1]
-                                    # インデックスを計算（mic channelは1から始まる）
-                                    ix1 = mic_ch1 - 1
-                                    ix2 = mic_ch2 - 1
-                                    # 音声データを取得
-                                    v1 = voices[ix1][0]
-                                    v2 = voices[ix2][0]
-                                    # サンプリング周波数を取得
-                                    fs = voices[ix1][1]
+                                        # GCC-PHATとTDOAを計算
+                                        gp_max_val, gp_max_ix, gp_auc, tdoa = fff.GetGccPhatAndTdoa(v1, v2, fs)
 
-                                    # GCC-PHATとTDOAを計算
-                                    gp_max_val, gp_max_ix, gp_auc, tdoa = fff.GetGccPhatAndTdoa(v1, v2, fs)
+                                        # 配列に格納する
+                                        for i, j in ((ix1, ix2), (ix2, ix1)):
+                                            gp_tdoa_features[i][j * n_gp_tdoa_features] = gp_max_val
+                                            gp_tdoa_features[i][j * n_gp_tdoa_features + 1] = gp_max_ix
+                                            gp_tdoa_features[i][j * n_gp_tdoa_features + 2] = gp_auc
+                                            gp_tdoa_features[i][j * n_gp_tdoa_features + 3] = tdoa
 
-                                    # 配列に格納する
-                                    for i, j in ((ix1, ix2), (ix2, ix1)):
-                                        gp_tdoa_features[i][j * n_gp_tdoa_features] = gp_max_val
-                                        gp_tdoa_features[i][j * n_gp_tdoa_features + 1] = gp_max_ix
-                                        gp_tdoa_features[i][j * n_gp_tdoa_features + 2] = gp_auc
-                                        gp_tdoa_features[i][j * n_gp_tdoa_features + 3] = tdoa
+                                    # rowsにgp_tdoa_featuresの内容を追加する
+                                    all_data = []
+                                    for i in range(n_mic_channels):
+                                        data = np.hstack([rows[i], gp_tdoa_features[i]])
+                                        all_data.append(data)
 
-                                # rowsにgp_tdoa_featuresの内容を追加する
-                                all_data = []
-                                for i in range(n_mic_channels):
-                                    data = np.hstack([rows[i], gp_tdoa_features[i]])
-                                    all_data.append(data)
-
-                                yield all_data
+                                    yield all_data
