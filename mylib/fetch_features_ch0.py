@@ -10,7 +10,6 @@ import itertools
 import numpy as np
 
 
-# def FetchFeaturesFromMonoData(file_path: str, th: Union[int, float] = 7000, w: int = 3, sec_range: float = 0.01, nth: int = 9):
 def FetchFeaturesFromMonoData(v: List, fs: int, th: Union[int, float] = 7000, w: int = 3, sec_range: float = 0.01, nth: int = 9):
     '''
     単一の音声データから特徴量を取得する。
@@ -34,7 +33,7 @@ def FetchFeaturesFromMonoData(v: List, fs: int, th: Union[int, float] = 7000, w:
 
     Returns
     -------
-    features: array-like
+    rows: array-like
         各種特徴量が格納された配列
     '''
 
@@ -73,18 +72,19 @@ def FetchFeaturesFromMonoData(v: List, fs: int, th: Union[int, float] = 7000, w:
     return [low_power, high_power, hlbr, coe1[0], coe1[1], coe3[0], coe3[1], coe3[2], coe3[3], ratio_max_to_10ms_ave_peaks, ratio_max_to_9th_ave_peaks, ac_std, ac_auc, diff_std, diff_auc, srmr_val]
 
 
-def FetchFeaturesFromDataset(DATASET_PATH: str = '../../dataset'):
+def FetchFeaturesFromDataset(DATASET_PATH) -> List:
     '''
     データセットの音声データから特徴量を抽出する関数
 
     Parameters
     ----------
-    DATASET_PATH : str, default '../dataset'
+    DATASET_PATH : str
         datasetへのpath
 
     Returns
     -------
-    None
+    all_data : array-like
+        csvに出力するデータ
     '''
 
     ####################
@@ -107,8 +107,12 @@ def FetchFeaturesFromDataset(DATASET_PATH: str = '../../dataset'):
     polar_angle_ids = [0, 1, 2]
     # DoV angles
     dov_angles = [str(i) for i in range(0, 360, 45)]
-    # マイクチャンネル(音声認識用に使用しているchannel0のみ特徴量抽出に利用する。)
-    mic_channels = range(0, 1)
+    # GCC-PHAT, TDOA以外の計算に用いるマイクチャンネル(音声認識用に使用しているchannel0のみ特徴量抽出に利用する。)
+    mic_channel = 0
+
+    # GCC-PHAT, TDOAの計算に用いるマイクチャンネル
+    gp_tdoa_mic_channels = range(1, 5)
+    mic_ch_pairs = itertools.combinations(gp_tdoa_mic_channels, 2)
 
     #########################
     ### 各種特徴量を取得する ###
@@ -133,6 +137,9 @@ def FetchFeaturesFromDataset(DATASET_PATH: str = '../../dataset'):
                             # 第3階層
                             third_dir_name = polar_position_id + '_' + distance + '_' + polar_angle
 
+                            # 一度に書き込む行範囲（特徴量をまとめる配列）
+                            rows = []
+
                             for utterance_id in utterance_ids:
                                 for dov_angle in dov_angles:
                                     # idが42360以上で実行する
@@ -140,52 +147,45 @@ def FetchFeaturesFromDataset(DATASET_PATH: str = '../../dataset'):
                                     #     id += 1
                                     #     continue
 
-                                    # 特徴量をまとめる配列
-                                    rows = []
-                                    # 音声データを格納する
-                                    voices = []
+
+                                    ###############
+                                    ### 属性情報 ###
+                                    ###############
+                                    attr = [id, filename, participant_id, room_id, device_placement_id, session_id,
+                                            polar_position_id, distance, polar_angle, utterance_id, dov_angle, mic_channel]
 
                                     ##########################
                                     ### GCC-PHAT & TDOA以外 ###
                                     ##########################
 
-                                    # 音声認識用に使用しているchannel0のみ特徴量抽出に利用する。
-                                    for mic_channel in mic_channels:
-                                        filename = utterance_id + '_' + dov_angle + '_' + str(mic_channel) + '.wav'
-                                        file_path = DATASET_PATH + '/' + first_dir_name + '/' + second_dir_name + '/' + third_dir_name + '/' + filename
+                                    # channel0のファイルパス
+                                    filename = utterance_id + '_' + dov_angle + '_' + str(mic_channel) + '.wav'
+                                    file_path = DATASET_PATH + '/' + first_dir_name + '/' + second_dir_name + '/' + third_dir_name + '/' + filename
 
-                                        print(f'id: {id}, file path: {file_path}')
+                                    print(f'id: {id}, file path: {file_path}')
 
-                                        # 音声データを読み込む
-                                        v, fs = cis.wavread(file_path)
-                                        voices.append([v, fs])
+                                    # channel0の音声データを読み込む
+                                    v, fs = cis.wavread(file_path)
 
-                                        # 音声ファイルの各種属性値を配列に格納する
-                                        attr = [id, filename, participant_id, room_id, device_placement_id, session_id, polar_position_id, distance, polar_angle, utterance_id, dov_angle, mic_channel]
-                                        # 特徴量を得る
-                                        # feature = FetchFeaturesFromMonoData(file_path)
-                                        feature = FetchFeaturesFromMonoData(v, fs)
-                                        # 属性情報と特徴量を合算->csvの1行分
-                                        row = attr + feature
-                                        
-                                        # 配列に追加
-                                        rows.append(row)
-
-                                        id = id + 1
-
+                                    # 特徴量を得る
+                                    features = FetchFeaturesFromMonoData(v, fs)
 
                                     #######################
                                     ### GCC-PHAT & TDOA ###
                                     #######################
-                                    
-                                    # GCC-PHATの計算に使うためのマイクのペアを生成
-                                    
-                                    mic_ch_pairs = itertools.combinations(mic_channels, 2)
-                                    n_mic_channels = len(mic_channels) # マイクチャンネル数
-                                    n_gp_tdoa_features = 4 # GCC-PHATとTDOAの処理で得られる
-                                    # GCC-PHATの特徴量の配列(mic_channels * (特徴数*チャンネル数)の配列を作成)
-                                    gp_tdoa_features = np.zeros((n_mic_channels, n_gp_tdoa_features * n_mic_channels))
 
+                                    # channel1~4の音声データを読み込む
+                                    voice_data = []
+                                    for ch in gp_tdoa_mic_channels:
+                                        fname = utterance_id + '_' + dov_angle + '_' + str(ch) + '.wav'
+                                        fpath = DATASET_PATH + '/' + first_dir_name + '/' + second_dir_name + '/' + third_dir_name + '/' + fname
+                                        v_, fs_ = cis.wavread(fpath)
+                                        voice_data.append([v_, fs_])
+                                    
+                                    # GCC-PHATの特徴量を格納する配列を生成
+                                    pair_gp_tdoa_features = []
+
+                                    # 各ペアについて計算
                                     for pair in mic_ch_pairs:
                                         # マイクのチャンネル
                                         mic_ch1 = pair[0]
@@ -194,25 +194,37 @@ def FetchFeaturesFromDataset(DATASET_PATH: str = '../../dataset'):
                                         ix1 = mic_ch1 - 1
                                         ix2 = mic_ch2 - 1
                                         # 音声データを取得
-                                        v1 = voices[ix1][0]
-                                        v2 = voices[ix2][0]
+                                        v1 = voice_data[ix1][0]
+                                        v2 = voice_data[ix2][0]
                                         # サンプリング周波数を取得
-                                        fs = voices[ix1][1]
+                                        fs = voice_data[ix1][1]
 
                                         # GCC-PHATとTDOAを計算
                                         gp_max_val, gp_max_ix, gp_auc, tdoa = fff.GetGccPhatAndTdoa(v1, v2, fs)
 
                                         # 配列に格納する
-                                        for i, j in ((ix1, ix2), (ix2, ix1)):
-                                            gp_tdoa_features[i][j * n_gp_tdoa_features] = gp_max_val
-                                            gp_tdoa_features[i][j * n_gp_tdoa_features + 1] = gp_max_ix
-                                            gp_tdoa_features[i][j * n_gp_tdoa_features + 2] = gp_auc
-                                            gp_tdoa_features[i][j * n_gp_tdoa_features + 3] = tdoa
+                                        pair_gp_tdoa_features.append([gp_max_val, gp_max_ix, gp_auc, tdoa])
 
-                                    # rowsにgp_tdoa_featuresの内容を追加する
-                                    all_data = []
-                                    for i in range(n_mic_channels):
-                                        data = np.hstack([rows[i], gp_tdoa_features[i]])
-                                        all_data.append(data)
+                                    # 標準偏差、範囲、最小値、最大値、平均を求める
+                                    gp_tdoa_features = []
+                                    np_pair_gp_tdoa_features = np.array(pair_gp_tdoa_features)
+                                    for i in range(4):
+                                        vals = np_pair_gp_tdoa_features[:, i]
+                                        std = np.std(vals)
+                                        max = np.max(vals)
+                                        min = np.min(vals)
+                                        r = max - min
+                                        mean = np.mean(vals)
 
-                                    yield all_data
+                                        gp_tdoa_features.extend([std, r, min, max, mean])
+
+                                    # 行情報を生成
+                                    row = attr + features + gp_tdoa_features
+
+                                    # 配列に追加
+                                    rows.append(row)
+
+                                    id = id + 1
+
+                            # 第３階層以下のファイルについて計算が終われば、一旦出力する。
+                            yield rows

@@ -9,7 +9,7 @@ from typing import List, Any, Union, Dict
 # 自作ライブラリのパス追加
 # sys.path.append('..')
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from mylib import fetch_features as ff
+from mylib import fetch_features_ch0 as ff
 
 # 出力ファイルへのパス
 OUTPUT_PATH = "../out/"
@@ -17,7 +17,7 @@ OUTPUT_PATH = "../out/"
 DATASET_PATH = "../../dataset"
 
 
-def createCsv(filename: str = 'features.csv') -> None:
+def createCsv(filename: str = 'features_ch0.csv') -> None:
     '''
     CSVを作成する関数
 
@@ -44,21 +44,14 @@ def createCsv(filename: str = 'features.csv') -> None:
         # 書き込む
         writer.writerow(header)
 
-        num = 0 #　カウンター
         # 特徴量を計算
         ff_gen = ff.FetchFeaturesFromDataset(DATASET_PATH)
         for rows in ff_gen:
             writer.writerows(rows)
-            num += 1
 
-            # カウント確認
-            if(num % 10 == 0):
-                print(f'count: {num}')
-
-            # 100ループ毎にデータをバッファからディスク上のファイルに書き込む
-            if(num % 20 == 0):
-                print(f'flush data to a csv file: {filename}.')
-                f.flush()
+            # ファイルへ出力する
+            print(f'flush data to a csv file: {filename}.')
+            f.flush()
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
