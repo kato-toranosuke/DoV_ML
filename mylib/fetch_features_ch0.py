@@ -112,7 +112,6 @@ def FetchFeaturesFromDataset(DATASET_PATH) -> List:
 
     # GCC-PHAT, TDOAの計算に用いるマイクチャンネル
     gp_tdoa_mic_channels = range(1, 5)
-    mic_ch_pairs = itertools.combinations(gp_tdoa_mic_channels, 2)
 
     #########################
     ### 各種特徴量を取得する ###
@@ -135,7 +134,7 @@ def FetchFeaturesFromDataset(DATASET_PATH) -> List:
                             distance = 2*distance_ix + 1
                             polar_angle = 45*polar_angle_ix
                             # 第3階層
-                            third_dir_name = polar_position_id + '_' + distance + '_' + polar_angle
+                            third_dir_name = polar_position_id + '_' + str(distance) + '_' + str(polar_angle)
 
                             # 一度に書き込む行範囲（特徴量をまとめる配列）
                             rows = []
@@ -146,13 +145,6 @@ def FetchFeaturesFromDataset(DATASET_PATH) -> List:
                                     # if(id < 42360):
                                     #     id += 1
                                     #     continue
-
-
-                                    ###############
-                                    ### 属性情報 ###
-                                    ###############
-                                    attr = [id, filename, participant_id, room_id, device_placement_id, session_id,
-                                            polar_position_id, distance, polar_angle, utterance_id, dov_angle, mic_channel]
 
                                     ##########################
                                     ### GCC-PHAT & TDOA以外 ###
@@ -186,6 +178,8 @@ def FetchFeaturesFromDataset(DATASET_PATH) -> List:
                                     pair_gp_tdoa_features = []
 
                                     # 各ペアについて計算
+                                    num = 0
+                                    mic_ch_pairs = itertools.combinations(gp_tdoa_mic_channels, 2)
                                     for pair in mic_ch_pairs:
                                         # マイクのチャンネル
                                         mic_ch1 = pair[0]
@@ -205,6 +199,9 @@ def FetchFeaturesFromDataset(DATASET_PATH) -> List:
                                         # 配列に格納する
                                         pair_gp_tdoa_features.append([gp_max_val, gp_max_ix, gp_auc, tdoa])
 
+                                        num += 1
+                                    print(num)
+
                                     # 標準偏差、範囲、最小値、最大値、平均を求める
                                     gp_tdoa_features = []
                                     np_pair_gp_tdoa_features = np.array(pair_gp_tdoa_features)
@@ -217,6 +214,11 @@ def FetchFeaturesFromDataset(DATASET_PATH) -> List:
                                         mean = np.mean(vals)
 
                                         gp_tdoa_features.extend([std, r, min, max, mean])
+
+                                    ###############
+                                    ### 属性情報 ###
+                                    ###############
+                                    attr = [id, filename, participant_id, room_id, device_placement_id, session_id, polar_position_id, distance, polar_angle, utterance_id, dov_angle, mic_channel]
 
                                     # 行情報を生成
                                     row = attr + features + gp_tdoa_features
