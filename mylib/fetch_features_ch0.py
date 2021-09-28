@@ -136,10 +136,11 @@ def FetchFeaturesFromDataset(DATASET_PATH) -> List:
                             # 第3階層
                             third_dir_name = polar_position_id + '_' + str(distance) + '_' + str(polar_angle)
 
-                            # 一度に書き込む行範囲（特徴量をまとめる配列）
-                            rows = []
 
                             for utterance_id in utterance_ids:
+                                # 一度に書き込む行範囲（特徴量をまとめる配列）
+                                rows = []
+
                                 for dov_angle in dov_angles:
                                     # idが42360以上で実行する
                                     # if(id < 42360):
@@ -178,7 +179,6 @@ def FetchFeaturesFromDataset(DATASET_PATH) -> List:
                                     pair_gp_tdoa_features = []
 
                                     # 各ペアについて計算
-                                    num = 0
                                     mic_ch_pairs = itertools.combinations(gp_tdoa_mic_channels, 2)
                                     for pair in mic_ch_pairs:
                                         # マイクのチャンネル
@@ -198,9 +198,6 @@ def FetchFeaturesFromDataset(DATASET_PATH) -> List:
 
                                         # 配列に格納する
                                         pair_gp_tdoa_features.append([gp_max_val, gp_max_ix, gp_auc, tdoa])
-
-                                        num += 1
-                                    print(num)
 
                                     # 標準偏差、範囲、最小値、最大値、平均を求める
                                     gp_tdoa_features = []
@@ -228,5 +225,5 @@ def FetchFeaturesFromDataset(DATASET_PATH) -> List:
 
                                     id = id + 1
 
-                            # 第３階層以下のファイルについて計算が終われば、一旦出力する。
-                            yield rows
+                                # 第３階層以下同一語句のファイルについて計算が終われば、一旦出力する。
+                                yield rows
