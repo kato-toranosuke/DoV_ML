@@ -142,10 +142,10 @@ def FetchFeaturesFromDataset(DATASET_PATH) -> List:
                                 rows = []
 
                                 for dov_angle in dov_angles:
-                                    # idが42360以上で実行する
-                                    # if(id < 42360):
-                                    #     id += 1
-                                    #     continue
+                                    # idが10616以上で実行する
+                                    if(id < 10616):
+                                        id += 1
+                                        continue
 
                                     ##########################
                                     ### GCC-PHAT & TDOA以外 ###
