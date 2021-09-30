@@ -7,7 +7,6 @@ import os
 from typing import List, Any, Union, Dict
 
 # 自作ライブラリのパス追加
-# sys.path.append('..')
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from mylib import fetch_features_ch0 as ff
 
@@ -50,7 +49,7 @@ def createCsv(filename: str = 'features_ch0.csv') -> None:
             writer.writerows(rows)
 
             # ファイルへ出力する
-            print(f'flush data to a csv file: {filename}.')
+            # print(f'flush data to a csv file: {filename}.')
             f.flush()
 
 if __name__ == '__main__':

@@ -236,6 +236,9 @@ def GetRatioMaxToOtherAvePeaks(data: List, w: int, fs: int, sec_range: float = 0
     '''
 
     # 最大ピークとその時のインデックスを取得
+    # max_ix: 最大ピークのインデックス
+    # all_ix: ピークのインデックス
+    # max_val: 最大ピークの値
     max_ix, all_ix, max_val = FindMaxPeak(data, w)
 
     # max_indexから+-10ms以内の波形を切り出す。
@@ -244,8 +247,7 @@ def GetRatioMaxToOtherAvePeaks(data: List, w: int, fs: int, sec_range: float = 0
     target_ix, target_val = GetWaveWithinTimeRange(data, max_ix, sec_range, fs)
 
     # target_peak_ix : 対象時間範囲内のピーク部分に対応するインデックス
-    target_peak_ix = [i for i in all_ix if (i >= target_ix[0]) and (
-        i <= target_ix[-1]) and (i != max_ix)]
+    target_peak_ix = [i for i in all_ix if (i >= target_ix[0]) and (i <= target_ix[-1]) and (i != max_ix)]
 
     # 最大ピーク以外の他の全てのピークの平均値を算出
     mean_other_peaks = np.mean(data[target_peak_ix])

@@ -142,8 +142,12 @@ def FetchFeaturesFromDataset(DATASET_PATH) -> List:
                                 rows = []
 
                                 for dov_angle in dov_angles:
-                                    # idが10616以上で実行する
-                                    if(id < 10616):
+                                    # idが11209以上で実行する
+                                    if(id < 11209):
+                                        id += 1
+                                        continue
+                                    # idが11210以上は実行しない
+                                    if (id > 11209):
                                         id += 1
                                         continue
 
