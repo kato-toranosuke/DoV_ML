@@ -31,7 +31,7 @@ def fft(data: List, fs: int, N: Union[str, int] = "full", overlap: Union[int, fl
       周波数軸
     '''
     # フレームサイズを求める（FFTの点数）
-    if N == "full":
+    if (N == "full") or (len(data) < N):
         l = len(data)
         ex = math.floor(math.log2(l))
         N = 2**ex

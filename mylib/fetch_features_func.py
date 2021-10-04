@@ -4,9 +4,10 @@
 from srmrpy.srmr import *
 import math
 import heapq
-from scipy import signal
+from scipy import signal, integrate
 import numpy as np
 import pprint
+import numba as nb
 
 # 型ヒントのサポート
 from typing import List, Any, Union, Dict
@@ -15,7 +16,7 @@ from typing import List, Any, Union, Dict
 ###############################
 ### 低周波成分と高周波成分の分析 ###
 ###############################
-
+@nb.jit(nopython=True, parallel=True, cache=True)
 def GetLHPower(fft_array: List, fft_axis: List, th: Union[float, int]) -> float:
     '''
     低周波成分と高周波成分の合計パワーを算出する。
@@ -56,6 +57,7 @@ def GetLHPower(fft_array: List, fft_axis: List, th: Union[float, int]) -> float:
     return low_power, high_power
 
 
+@nb.jit(nopython=True, cache=True)
 def GetHLBR(low_power: float, high_power: float) -> float:
     '''
     低周波成分と高周波成分の合計パワーの比を算出する。
@@ -79,6 +81,7 @@ def GetHLBR(low_power: float, high_power: float) -> float:
 #######################
 
 
+# @nb.jit(nopython=True, parallel=True, cache=True)
 def FitFFT(fft_array: List[Any], freq: List[Any], deg: int) -> List[float]:
     # 係数
     coe = np.polyfit(freq, fft_array, deg)
@@ -90,6 +93,7 @@ def FitFFT(fft_array: List[Any], freq: List[Any], deg: int) -> List[float]:
 ################
 
 # 純粋なピーク検出
+# @nb.jit(nopython=True, parallel=True, cache=True)
 def FindPeaks(x: List, y: List, n: int, w: int):
     '''
     波形(x, y)からn個のピークを幅wで検出する関数
@@ -141,6 +145,7 @@ def FindPeaks(x: List, y: List, n: int, w: int):
 
 
 # 最大ピークと、+-10ms以内の他のピークの平均値の比
+# @nb.jit(nopython=True, parallel=True, cache=True)
 def FindMaxPeak(data: List, w: int):
     '''
     最大ピークを検出する関数
@@ -173,6 +178,7 @@ def FindMaxPeak(data: List, w: int):
     return max_peak_ix, all_peaks_ix, max_peak_val
 
 
+# @nb.jit(nopython=True, parallel=True, cache=True)
 def GetWaveWithinTimeRange(data: List[float], base_ix: int, sec_range: int, fs: int):
     '''
     基準インデックスから周囲ms_range[s]の波形を切り出す関数
@@ -214,6 +220,7 @@ def GetWaveWithinTimeRange(data: List[float], base_ix: int, sec_range: int, fs: 
     return index, val
 
 
+# @nb.jit(nopython=True, parallel=True, cache=True)
 def GetRatioMaxToOtherAvePeaks(data: List, w: int, fs: int, sec_range: float = 0.01) -> float:
     '''
     最大ピークと、sec_range[sec]以内の他のピークの平均値の比を取得する関数
@@ -247,7 +254,8 @@ def GetRatioMaxToOtherAvePeaks(data: List, w: int, fs: int, sec_range: float = 0
     target_ix, target_val = GetWaveWithinTimeRange(data, max_ix, sec_range, fs)
 
     # target_peak_ix : 対象時間範囲内のピーク部分に対応するインデックス
-    target_peak_ix = [i for i in all_ix if (i >= target_ix[0]) and (i <= target_ix[-1]) and (i != max_ix)]
+    target_peak_ix = [i for i in all_ix if (i >= target_ix[0]) and (
+        i <= target_ix[-1]) and (i != max_ix)]
 
     # 最大ピーク以外の他の全てのピークの平均値を算出
     mean_other_peaks = np.mean(data[target_peak_ix])
@@ -259,6 +267,7 @@ def GetRatioMaxToOtherAvePeaks(data: List, w: int, fs: int, sec_range: float = 0
 # 最大ピークと次に高い９つのピークの平均値の比
 
 
+# @nb.jit(nopython=True, parallel=True, cache=True)
 def FindNthMaxPeak(data: List, n: int, w: int) -> List:
     '''
     第n位までの大きさのピークの値を取得する関数
@@ -290,6 +299,7 @@ def FindNthMaxPeak(data: List, n: int, w: int) -> List:
     return peaks_val
 
 
+# @nb.jit(nopython=True, parallel=True, cache=True)
 def GetRatioMaxToNthAvePeaks(data: List, w: int, n: int = 10) -> float:
     '''
     最大ピークと、次に高い(n-1)個のピークの平均値の比を取得する関数
@@ -329,6 +339,7 @@ def GetRatioMaxToNthAvePeaks(data: List, w: int, n: int = 10) -> float:
 # 自己相関の標準偏差と曲線下面積
 
 
+@nb.jit(parallel=True, cache=True)
 def AutocorStdAuc(data):
     '''
     自己相関の標準偏差と曲線下面積を求める関数
@@ -358,6 +369,7 @@ def AutocorStdAuc(data):
     return ac, ac_std, ac_auc
 
 
+@nb.jit(nopython=True, parallel=True, cache=True)
 def CalcAUC(data: List) -> float:
     '''
     曲線下面積を求める関数
@@ -372,17 +384,12 @@ def CalcAUC(data: List) -> float:
     S : float
         曲線下面積
     '''
-    # 総面積
-    S = 0
-
-    for i in range(0, len(data)):
-        S += np.abs(data[i]) * 1
-
-    return S
+    return np.sum(data)
 
 # 自己相関関数の微分の標準偏差と曲線下面積
 
 
+@nb.jit(parallel=True, cache=True)
 def CalcDiffer(data: List) -> List:
     '''
     微分値を求める関数
@@ -401,13 +408,10 @@ def CalcDiffer(data: List) -> List:
     -----
     波形データのx軸はインデックスであることが前提。
     '''
-    differs = []
-    for i in range(0, len(data)-1):
-        d = np.abs((data[i+1] - data[i])/1)
-        differs.append(d)
-    return differs
+    return np.abs(np.gradient(data, edge_order=2))
 
 
+# @nb.jit(nopython=True, parallel=True, cache=True)
 def DifferStdAuc(data: List):
     '''
     微分値の標準偏差と曲線下面積を求める関数
@@ -439,7 +443,7 @@ def DifferStdAuc(data: List):
 ################
 ### GCC-PHAT ###
 ################
-
+# @nb.jit(nopython=True, parallel=True, cache=True)
 def gcc_phat(sig, refsig, interp=16):
     '''
     GCC-PHATを算出
@@ -457,7 +461,7 @@ def gcc_phat(sig, refsig, interp=16):
 
     # ゼロ割り対策
     R_ABS = np.abs(R)
-    D = np.divide(R, R_ABS, out=np.zeros_like(R), where=R_ABS!=0)
+    D = np.divide(R, R_ABS, out=np.zeros_like(R), where=R_ABS != 0)
 
     # 純粋なGCC-PHATの値はこれ。
     # gcc = np.fft.irfft(R / np.abs(R), n=(interp * n))
@@ -466,6 +470,7 @@ def gcc_phat(sig, refsig, interp=16):
     return gcc, n
 
 
+# @nb.jit(nopython=True, parallel=True, cache=True)
 def tdoa_from_gccphat(gp, n, fs=1, max_tau=None, interp=16):
     '''
     GCC-PHATをフィルタにTDOA(Time Difference Of Arrival)を算出する
@@ -485,6 +490,7 @@ def tdoa_from_gccphat(gp, n, fs=1, max_tau=None, interp=16):
     return tau
 
 
+# @nb.jit(nopython=True, parallel=True, cache=True)
 def GetGccPhatAndTdoa(y1: List, y2: List, fs, max_delay: float = 0.000236, w: int = 3, sound_spd: float = 343.2, distance: float = 0.14):
     '''
     Parameters
@@ -528,7 +534,7 @@ def GetGccPhatAndTdoa(y1: List, y2: List, fs, max_delay: float = 0.000236, w: in
 
     # max_tauは時間
     max_tau = distance / sound_spd
-    
+
     # GCC-PHATの計算
     gp, n = gcc_phat(delay_val1, delay_val2)
 

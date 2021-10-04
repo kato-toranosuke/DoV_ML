@@ -4,11 +4,13 @@
 import numpy as np
 from scipy import signal
 from scipy import fftpack
+import numba as nb
 
 # 型ヒントのサポート
 from typing import List, Any, Union, Dict
 
 
+# @nb.jit(nopython=True, parallel=True, cache=True)
 def ov(data: List[float], fs: int, N: int, overlap: Union[int, float]) -> List and int:
     '''
     オーバーラップ処理を行う関数。
@@ -44,13 +46,14 @@ def ov(data: List[float], fs: int, N: int, overlap: Union[int, float]) -> List a
     array = []  # 抽出したデータを入れる空配列の定義
 
     # forループでデータを抽出
-    for i in range(N_ave):
+    for i in nb.prange(N_ave):
         ps = int(x_ol * i)  # 切り出し位置をループ毎に更新
         array.append(data[ps:ps+N:1])  # 切り出し位置psからフレームサイズ分抽出して配列に追加
 
     return array, N_ave  # オーバーラップ抽出されたデータ配列とデータ個数を戻り値にする
 
 
+# @nb.jit(parallel=True, cache=True)
 def hanning(data_array: List, N: int, N_ave: int) -> List and float:
     '''
     窓関数処理（ハニング窓）を行う関数。
@@ -77,12 +80,13 @@ def hanning(data_array: List, N: int, N_ave: int) -> List and float:
     acf = 1 / (sum(han) / N)  # 振幅補正係数(Amplitude Correction Factor)
 
     # オーバーラップされた複数時間波形全てに窓関数をかける
-    for i in range(N_ave):
+    for i in nb.prange(N_ave):
         data_array[i] = data_array[i] * han  # 窓関数をかける
 
     return data_array, acf
 
 
+# @nb.jit(parallel=True, cache=True)
 def fft_ave(data_array: List, fs: int, N: int, N_ave: int, acf: float):
     '''
     平均化FFT処理を行う関数。
