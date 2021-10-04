@@ -1,0 +1,1 @@
+/usr/local/bin/python3: can't open file '/Users/toranosuke/Desktop/DoV/script/fetch_features_export_csv_ch0_2.py': [Errno 2] No such file or directory

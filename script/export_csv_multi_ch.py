@@ -9,7 +9,7 @@ from typing import List, Any, Union, Dict
 # 自作ライブラリのパス追加
 # sys.path.append('..')
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from mylib import fetch_features as ff
+from mylib import fetch_features_from_multi_ch as ff
 
 # 出力ファイルへのパス
 OUTPUT_PATH = "../out/"

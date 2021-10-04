@@ -8,7 +8,7 @@ from typing import List, Any, Union, Dict
 
 # 自作ライブラリのパス追加
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from mylib import fetch_features_ch0 as ff
+from mylib import fetch_features_from_mono_ch as ff
 
 # 出力ファイルへのパス
 OUTPUT_PATH = "../out/"
