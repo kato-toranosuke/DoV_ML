@@ -81,7 +81,6 @@ def GetHLBR(low_power: float, high_power: float) -> float:
 #######################
 
 
-# @nb.jit(nopython=True, parallel=True, cache=True)
 def FitFFT(fft_array: List[Any], freq: List[Any], deg: int) -> List[float]:
     # 係数
     coe = np.polyfit(freq, fft_array, deg)
@@ -93,7 +92,7 @@ def FitFFT(fft_array: List[Any], freq: List[Any], deg: int) -> List[float]:
 ################
 
 # 純粋なピーク検出
-# @nb.jit(nopython=True, parallel=True, cache=True)
+@nb.jit(nopython=True, parallel=True, cache=True)
 def FindPeaks(x: List, y: List, n: int, w: int):
     '''
     波形(x, y)からn個のピークを幅wで検出する関数
@@ -125,7 +124,7 @@ def FindPeaks(x: List, y: List, n: int, w: int):
     peaks = []  # ピーク値の空リスト
 
     # n個分のピーク情報(指標、値）を格納
-    for i in range(n):
+    for i in nb.prange(n):
         # ピークがn個に満たない場合、ループを抜ける（エラー処理）
         if i >= len(index_all[0]):
             break
@@ -145,7 +144,6 @@ def FindPeaks(x: List, y: List, n: int, w: int):
 
 
 # 最大ピークと、+-10ms以内の他のピークの平均値の比
-# @nb.jit(nopython=True, parallel=True, cache=True)
 def FindMaxPeak(data: List, w: int):
     '''
     最大ピークを検出する関数
@@ -178,7 +176,7 @@ def FindMaxPeak(data: List, w: int):
     return max_peak_ix, all_peaks_ix, max_peak_val
 
 
-# @nb.jit(nopython=True, parallel=True, cache=True)
+@nb.jit(nopython=True, parallel=True, cache=True)
 def GetWaveWithinTimeRange(data: List[float], base_ix: int, sec_range: int, fs: int):
     '''
     基準インデックスから周囲ms_range[s]の波形を切り出す関数
@@ -220,7 +218,6 @@ def GetWaveWithinTimeRange(data: List[float], base_ix: int, sec_range: int, fs: 
     return index, val
 
 
-# @nb.jit(nopython=True, parallel=True, cache=True)
 def GetRatioMaxToOtherAvePeaks(data: List, w: int, fs: int, sec_range: float = 0.01) -> float:
     '''
     最大ピークと、sec_range[sec]以内の他のピークの平均値の比を取得する関数
@@ -267,7 +264,6 @@ def GetRatioMaxToOtherAvePeaks(data: List, w: int, fs: int, sec_range: float = 0
 # 最大ピークと次に高い９つのピークの平均値の比
 
 
-# @nb.jit(nopython=True, parallel=True, cache=True)
 def FindNthMaxPeak(data: List, n: int, w: int) -> List:
     '''
     第n位までの大きさのピークの値を取得する関数
@@ -299,7 +295,6 @@ def FindNthMaxPeak(data: List, n: int, w: int) -> List:
     return peaks_val
 
 
-# @nb.jit(nopython=True, parallel=True, cache=True)
 def GetRatioMaxToNthAvePeaks(data: List, w: int, n: int = 10) -> float:
     '''
     最大ピークと、次に高い(n-1)個のピークの平均値の比を取得する関数
@@ -339,7 +334,6 @@ def GetRatioMaxToNthAvePeaks(data: List, w: int, n: int = 10) -> float:
 # 自己相関の標準偏差と曲線下面積
 
 
-@nb.jit(parallel=True, cache=True)
 def AutocorStdAuc(data):
     '''
     自己相関の標準偏差と曲線下面積を求める関数
@@ -384,7 +378,7 @@ def CalcAUC(data: List) -> float:
     S : float
         曲線下面積
     '''
-    return np.sum(data)
+    return np.sum(np.abs(data))
 
 # 自己相関関数の微分の標準偏差と曲線下面積
 
@@ -411,7 +405,7 @@ def CalcDiffer(data: List) -> List:
     return np.abs(np.gradient(data, edge_order=2))
 
 
-# @nb.jit(nopython=True, parallel=True, cache=True)
+@nb.jit(parallel=True, cache=True)
 def DifferStdAuc(data: List):
     '''
     微分値の標準偏差と曲線下面積を求める関数
@@ -444,7 +438,7 @@ def DifferStdAuc(data: List):
 ### GCC-PHAT ###
 ################
 # @nb.jit(nopython=True, parallel=True, cache=True)
-def gcc_phat(sig, refsig, interp=16):
+def gcc_phat_old(sig, refsig, interp=16):
     '''
     GCC-PHATを算出
     This function computes the offset between the signal sig and the reference signal refsig
@@ -490,8 +484,44 @@ def tdoa_from_gccphat(gp, n, fs=1, max_tau=None, interp=16):
     return tau
 
 
-# @nb.jit(nopython=True, parallel=True, cache=True)
-def GetGccPhatAndTdoa(y1: List, y2: List, fs, max_delay: float = 0.000236, w: int = 3, sound_spd: float = 343.2, distance: float = 0.14):
+def gcc_phat(sig, refsig, fs=1, max_tau=None, interp=16):
+    '''
+    This function computes the offset between the signal sig and the reference signal refsig
+    using the Generalized Cross Correlation - Phase Transform (GCC-PHAT)method.
+    '''
+
+    # make sure the length for the FFT is larger or equal than len(sig) + len(refsig)
+    n = sig.shape[0] + refsig.shape[0]
+
+    # フレームサイズを求める（FFTの点数）
+    ex = math.ceil(math.log2(n))
+    n = 2**ex
+
+    # Generalized Cross Correlation Phase Transform
+    SIG = np.fft.rfft(sig, n=n)
+    REFSIG = np.fft.rfft(refsig, n=n)
+    R = SIG * np.conj(REFSIG)
+
+    cc = np.fft.irfft(R / np.abs(R), n=(interp * n))
+
+    max_shift = int(interp * n / 2)
+    if max_tau:
+        max_shift = np.minimum(int(interp * fs * max_tau), max_shift)
+
+    cc = np.concatenate((cc[-max_shift:], cc[:max_shift+1]))
+
+    # find max cross correlation value
+    cc_max = np.max(cc)
+
+    # find max cross correlation index
+    shift = np.argmax(np.abs(cc)) - max_shift
+
+    tau = shift / float(interp * fs)
+
+    return tau, cc, cc_max, shift
+
+# @nb.jit(parallel=True, cache=True)
+def GetGccPhatAndTdoa(y1: List, y2: List, fs, max_delay: float = 0.000236, w: int = 3, sound_spd: float = 343.2, distance: float = 0.070):
     '''
     Parameters
     ----------
@@ -536,14 +566,19 @@ def GetGccPhatAndTdoa(y1: List, y2: List, fs, max_delay: float = 0.000236, w: in
     max_tau = distance / sound_spd
 
     # GCC-PHATの計算
-    gp, n = gcc_phat(delay_val1, delay_val2)
+    tau, cc, cc_max, shift = gcc_phat(sig = delay_val1, refsig = delay_val2, fs=fs, max_tau=max_tau)
 
-    # GCC-PHATの最大ピークを計算
-    gp_max_ix, _, gp_max_val = FindMaxPeak(gp, w)
     # 曲線下面積を計算
-    gp_auc = CalcAUC(gp)
+    cc_auc = CalcAUC(cc)
 
-    # TDOAを計算
-    tdoa = tdoa_from_gccphat(gp, n, fs, max_tau)
 
-    return gp_max_val, gp_max_ix, gp_auc, tdoa
+    # # GCC-PHATの最大ピークを計算
+    # gp_max_ix, _, gp_max_val = FindMaxPeak(gp, w)
+    # # 曲線下面積を計算
+    # gp_auc = CalcAUC(gp)
+
+    # # TDOAを計算
+    # tdoa = tdoa_from_gccphat(gp, n, fs, max_tau)
+
+    # return gp_max_val, gp_max_ix, gp_auc, tdoa
+    return cc_max, shift, cc_auc, tau
