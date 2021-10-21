@@ -565,6 +565,6 @@ def GetGccPhatAndTdoa(y1: List, y2: List, fs, max_delay: float = 0.000236, w: in
 
     # 曲線下面積を計算
     dt = 1/fs
-    cc_auc = dt * np.abs(target_val)
+    cc_auc = np.sum(dt * np.abs(target_val))
 
     return cc_max, shift, cc_auc, tau
