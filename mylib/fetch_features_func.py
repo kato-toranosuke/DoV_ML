@@ -492,7 +492,6 @@ def gcc_phat(sig, refsig, fs=1, max_tau=None, interp=16):
 
     # make sure the length for the FFT is larger or equal than len(sig) + len(refsig)
     n = sig.shape[0] + refsig.shape[0]
-
     # フレームサイズを求める（FFTの点数）
     ex = math.ceil(math.log2(n))
     n = 2**ex
@@ -551,34 +550,21 @@ def GetGccPhatAndTdoa(y1: List, y2: List, fs, max_delay: float = 0.000236, w: in
     tdoa : float
         TDOA
     '''
-
-    # 最大ピークのインデックスを取得（時間空間）
-    # data1
-    max_ix1, _, _ = FindMaxPeak(y1, w)
-    # data2
-    max_ix2, _, _ = FindMaxPeak(y2, w)
-
-    # 最大ピークから+-MAX_DELAYだけ切り出す
-    delay_ix1, delay_val1 = GetWaveWithinTimeRange(y1, max_ix1, max_delay, fs)
-    delay_ix2, delay_val2 = GetWaveWithinTimeRange(y2, max_ix2, max_delay, fs)
-
     # max_tauは時間
     max_tau = distance / sound_spd
 
     # GCC-PHATの計算
-    tau, cc, cc_max, shift = gcc_phat(sig = delay_val1, refsig = delay_val2, fs=fs, max_tau=max_tau)
+    tau, cc, cc_max, shift = gcc_phat(sig=y1, refsig=y2, fs=fs, max_tau=max_tau)
+
+    # 曲線下面積
+    # gcc-phatの最大ピークのインデックスを取得（時間空間）
+    max_ix, _, _ = FindMaxPeak(cc, w)
+
+    # 最大ピークから+-MAX_DELAYだけ切り出す
+    _, target_val = GetWaveWithinTimeRange(cc, max_ix, max_delay, fs)
 
     # 曲線下面積を計算
-    cc_auc = CalcAUC(cc)
+    dt = 1/fs
+    cc_auc = np.sum(dt * np.abs(target_val))
 
-
-    # # GCC-PHATの最大ピークを計算
-    # gp_max_ix, _, gp_max_val = FindMaxPeak(gp, w)
-    # # 曲線下面積を計算
-    # gp_auc = CalcAUC(gp)
-
-    # # TDOAを計算
-    # tdoa = tdoa_from_gccphat(gp, n, fs, max_tau)
-
-    # return gp_max_val, gp_max_ix, gp_auc, tdoa
     return cc_max, shift, cc_auc, tau

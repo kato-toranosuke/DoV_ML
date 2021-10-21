@@ -4,14 +4,14 @@ header_attr = ["id" "filename" "participant_id" "room_id" "device_placement_id" 
 header_gp_tdoa_multich = ["gp_max_val_ch1" "gp_max_ix_ch1" "gp_auc_ch1" "tdoa_ch1" "gp_max_val_ch2" "gp_max_ix_ch2" "gp_auc_ch2" "tdoa_ch2" "gp_max_val_ch3" "gp_max_ix_ch3" "gp_auc_ch3" "tdoa_ch3" "gp_max_val_ch4" "gp_max_ix_ch4" "gp_auc_ch4" "tdoa_ch4"];
 header_multich = horzcat(header_attr, header_gp_tdoa_multich);
 
-csv_fname_mutich = "../out/matlab/test_multich.csv";
+csv_fname_mutich = "../../out/matlab/test_multich.csv";
 writematrix(header_multich, csv_fname_mutich);
 
 % シングルチャンネルver
 header_gp_tdoa_monoch = ["gp_max_val_std" "gp_max_val_range" "gp_max_val_min" "gp_max_val_max" "gp_max_val_mean" "gp_max_ix_std" "gp_max_ix_range" "gp_max_ix_min" "gp_max_ix_max" "gp_max_ix_mean" "gp_auc_std" "gp_auc_range" "gp_auc_min" "gp_auc_max" "gp_auc_mean" "tdoa_std" "tdoa_range" "tdoa_min" "tdoa_max" "tdoa_mean"];
 header_monoch = horzcat(header_attr, header_gp_tdoa_monoch);
 
-csv_fname_monoch = "../out/matlab/matlab_gp_monoch.csv";
+csv_fname_monoch = "../../out/matlab/matlab_gp_monoch.csv";
 writematrix(header_monoch, csv_fname_monoch);
 
 % ファイルアクセスの為の各種パラメータ
@@ -42,9 +42,9 @@ gp_tdoa_mic_channels = [1:4];
 
 % ファイルにアクセス
 % データセットへのパス
-DATASET_PATH = "../../dataset";
+DATASET_PATH = "../../../dataset";
 % 出力ファイルへのパス
-OUTPUT_PATH = "../out/";
+OUTPUT_PATH = "../../out/";
 % ピークから切り出す秒数
 tlength = 0.000236;
 % id
