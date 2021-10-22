@@ -8,6 +8,7 @@ from scipy import signal, integrate
 import numpy as np
 import pprint
 import numba as nb
+import pprint
 
 # 型ヒントのサポート
 from typing import List, Any, Union, Dict
@@ -489,33 +490,42 @@ def gcc_phat(sig, refsig, fs=1, max_tau=None, interp=16):
     This function computes the offset between the signal sig and the reference signal refsig
     using the Generalized Cross Correlation - Phase Transform (GCC-PHAT)method.
     '''
+    try:
+        # make sure the length for the FFT is larger or equal than len(sig) + len(refsig)
+        n = sig.shape[0] + refsig.shape[0]
+        # フレームサイズを求める（FFTの点数）
+        ex = math.ceil(math.log2(n))
+        n = 2**ex
 
-    # make sure the length for the FFT is larger or equal than len(sig) + len(refsig)
-    n = sig.shape[0] + refsig.shape[0]
-    # フレームサイズを求める（FFTの点数）
-    ex = math.ceil(math.log2(n))
-    n = 2**ex
+        # Generalized Cross Correlation Phase Transform
+        SIG = np.fft.rfft(sig, n=n)
+        REFSIG = np.fft.rfft(refsig, n=n)
+        R = SIG * np.conj(REFSIG)
 
-    # Generalized Cross Correlation Phase Transform
-    SIG = np.fft.rfft(sig, n=n)
-    REFSIG = np.fft.rfft(refsig, n=n)
-    R = SIG * np.conj(REFSIG)
+        # ゼロ割り対策
+        R_ABS = np.abs(R)        
+        Normalize_R = np.divide(R, R_ABS, out=np.zeros_like(R), where=R_ABS != 0)
 
-    cc = np.fft.irfft(R / np.abs(R), n=(interp * n))
+        # cc = np.fft.irfft(R / np.abs(R), n=(interp * n))
+        cc = np.fft.irfft(Normalize_R, n=(interp * n))
 
-    max_shift = int(interp * n / 2)
-    if max_tau:
-        max_shift = np.minimum(int(interp * fs * max_tau), max_shift)
+        max_shift = int(interp * n / 2)
+        if max_tau:
+            max_shift = np.minimum(int(interp * fs * max_tau), max_shift)
 
-    cc = np.concatenate((cc[-max_shift:], cc[:max_shift+1]))
+        cc = np.concatenate((cc[-max_shift:], cc[:max_shift+1]))
 
-    # find max cross correlation value
-    cc_max = np.max(cc)
+        # find max cross correlation value
+        cc_max = np.max(cc)
 
-    # find max cross correlation index
-    shift = np.argmax(np.abs(cc)) - max_shift
+        # find max cross correlation index
+        shift = np.argmax(np.abs(cc)) - max_shift
 
-    tau = shift / float(interp * fs)
+        tau = shift / float(interp * fs)
+
+    # except ZeroDivisionError as e:
+    except:
+        print("何かのエラー!")
 
     return tau, cc, cc_max, shift
 
