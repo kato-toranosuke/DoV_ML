@@ -193,9 +193,9 @@ def FetchFeaturesFromDataset(DATASET_PATH: str, w: int, N: int, overlap: Union[i
 
                                 for dov_angle in dov_angles:
                                     # # idが11209以上で実行する
-                                    if(id < 211):
-                                        id += 1
-                                        continue
+                                    # if(id < 211):
+                                    #     id += 1
+                                    #     continue
                                     # # idが11210以上は実行しない
                                     # if (id > 11209):
                                     #     id += 1
