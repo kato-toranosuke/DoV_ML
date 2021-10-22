@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-from srmrpy.srmr import *
 import math
 import heapq
 from scipy import signal, integrate
