@@ -4,7 +4,6 @@
 from . import fetch_features_func as fff
 from . import cis
 from typing import List, Any, Union, Dict
-from srmrpy.srmr import *
 import itertools
 import numpy as np
 from . import fetch_features as ff
