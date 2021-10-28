@@ -5,6 +5,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 import pandas as pd
 from typing import List
 import numpy as np
+import imblearn
 
 
 class DataFrameSelector(BaseEstimator, TransformerMixin):
