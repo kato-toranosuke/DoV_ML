@@ -14,6 +14,11 @@ def GetDictStr(dict: Dict, level: int=0) -> str:
   prefix = '\t' * level
   output_str = ''
   for key, val in dict.items():
+    if key == 'estimators_':
+      _val = '\n'
+      _val += GetListStr(val, level=1)
+      val = _val
+
     output_str += prefix + '- ' + key + ' = ' + str(val) + '\n'
   output_str += '\n'
   return output_str
@@ -89,12 +94,16 @@ def GetEvaluationScore(scores: List, metrics: List, level=3) -> str:
   for metric in metrics:
     index = 'test_' + metric
     score = scores[index]
+
+    score_str = '[ '
+    score_str += ', '.join([str(s) for s in score])
+    score_str += ' ]'
+
     score_dict = {
-      'Scores': score,
+      'Scores': score_str,
       'Mean': score.mean(),
       'Standard deviation': score.std()
     }
-    print(score)
     output_str += (prefix + ' ' + metric + '\n')
     output_str += GetDictStr(score_dict)
 
