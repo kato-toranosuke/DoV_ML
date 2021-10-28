@@ -1,1 +1,0 @@
-id,filename,participant_id,room_id,device_placement_id,session_id,polar_position_id,distance,polar_angle,utterance_id,dov_angle,mic_channel,gp_max_val_ch1,gp_max_ix_ch1,gp_auc_ch1,tdoa_ch1,gp_max_val_ch2,gp_max_ix_ch2,gp_auc_ch2,tdoa_ch2,gp_max_val_ch3,gp_max_ix_ch3,gp_auc_ch3,tdoa_ch3,gp_max_val_ch4,gp_max_ix_ch4,gp_auc_ch4,tdoa_ch4
