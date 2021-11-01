@@ -5,7 +5,26 @@ from sklearn.base import BaseEstimator, TransformerMixin
 import pandas as pd
 from typing import List
 import numpy as np
-import imblearn
+from .load_constants import ML_Consts
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from imblearn.pipeline import Pipeline as ImbPipeline
+from imblearn.under_sampling import RandomUnderSampler, ClusterCentroids
+
+# Pipeline
+class MlPipeline():
+    def __init__(self, consts: ML_Consts):
+        self.consts = consts
+        # 特徴量抽出パイプライン
+        self.pick_features_pipeline = Pipeline([
+            ('selector', DataFrameSelector(consts.FEATURE_ATTRBS)),
+            ('imputer', SimpleImputer(strategy="median"))
+        ])
+        # ラベル抽出パイプライン
+        self.pick_label_pipeline = Pipeline([
+            ('selector', DataFrameSelector(consts.LABEL_ATTRB)),
+            ('transducer', ValueTransducer(consts.FACING_DOV_ANGLES))
+        ])
 
 
 class DataFrameSelector(BaseEstimator, TransformerMixin):
