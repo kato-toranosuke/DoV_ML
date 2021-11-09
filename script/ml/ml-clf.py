@@ -4,11 +4,12 @@
 from typing import List
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
-from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
 import joblib
 from sklearn.model_selection import cross_val_predict, cross_validate
 from sklearn.metrics import confusion_matrix
-import sys, os
+import sys
+import os
 from sklearn.model_selection import GridSearchCV
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
@@ -17,7 +18,8 @@ from mylib import ml_pipeline_components as pipeline_comps
 from mylib import record_model_data as rec
 from mylib import load_constants
 
-def main(csv_list: List, consts: load_constants.ML_Consts=None):
+
+def main(csv_list: List, consts: load_constants.ML_Consts = None):
   '''
   Parameters
   ----------
@@ -47,16 +49,16 @@ def main(csv_list: List, consts: load_constants.ML_Consts=None):
   #########################
   # 特徴量抽出パイプライン
   features_pipeline = Pipeline([
-    ('selector', pipeline_comps.DataFrameSelector(consts.FEATURE_ATTRBS)),
-    ('imputer', SimpleImputer(strategy="median"))
+      ('selector', pipeline_comps.DataFrameSelector(consts.FEATURE_ATTRBS)),
+      ('imputer', SimpleImputer(strategy="median"))
   ])
   X_train = features_pipeline.fit_transform(train_set)
   X_test = features_pipeline.fit_transform(test_set)
 
   # ラベル抽出パイプライン
   label_pipeline = Pipeline([
-    ('selector', pipeline_comps.DataFrameSelector(consts.LABEL_ATTRB)),
-    ('transducer', pipeline_comps.ValueTransducer(consts.FACING_DOV_ANGLES))
+      ('selector', pipeline_comps.DataFrameSelector(consts.LABEL_ATTRB)),
+      ('transducer', pipeline_comps.ValueTransducer(consts.FACING_DOV_ANGLES))
   ])
   y_train = label_pipeline.fit_transform(train_set)
   y_test = label_pipeline.fit_transform(test_set)
