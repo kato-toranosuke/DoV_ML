@@ -110,22 +110,22 @@ if __name__ == '__main__':
     consts = load_constants.ML_Consts(param_grid=param_grid)
 
     # trial 1
-    estimator = ExtraTreesClassifier()
+    estimator = RandomForestClassifier()
     resampler = ClusterCentroids(random_state=42)
     main(csv_list, estimator, resampler, consts=consts)
 
     # trial 2
-    estimator = ExtraTreesClassifier()
+    estimator = RandomForestClassifier()
     resampler = RandomUnderSampler(random_state=42)
     main(csv_list, estimator, resampler, consts)
 
     # trial 3
-    estimator = ExtraTreesClassifier()
+    estimator = RandomForestClassifier()
     resampler = RandomOverSampler(random_state=42)
     main(csv_list, estimator, resampler, consts)
 
     # trial 4
-    estimator = ExtraTreesClassifier()
+    estimator = RandomForestClassifier()
     resampler = SMOTE(random_state=42, n_jobs=-1)
     main(csv_list, estimator, resampler, consts)
 
