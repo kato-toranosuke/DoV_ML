@@ -102,12 +102,7 @@ if __name__ == '__main__':
     for i in range(1, len(sys.argv)):
       csv_list.append(sys.argv[i])
 
-    ## trial 1
-    # 推定器
-    estimator = ExtraTreesClassifier()
-    # Resampler
-    resampler = ClusterCentroids(random_state=42)
-    # パラメータ
+    # パラメータの設定
     param_grid = [
         {'est__n_estimators': [10, 100, 1000], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': ['sqrt', 'log2', None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]},
         {'est__n_estimators': [10, 100, 1000], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': ['sqrt', 'log2', None], 'est__bootstrap': [True], 'est__oob_score': [True, False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]}
@@ -116,22 +111,26 @@ if __name__ == '__main__':
     #   {'est__n_estimators': [10], 'est__min_samples_split': [2], 'est__min_samples_leaf': [5], 'est__max_features': [None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.5]}
     # ]
     consts = load_constants.ML_Consts(param_grid=param_grid)
-    main(csv_list, estimator, resampler, consts=consts)
 
-    # # trial 2
+    ## trial 1
     # estimator = ExtraTreesClassifier()
-    # resampler = RandomUnderSampler(random_state=42)
-    # main(csv_list, estimator, resampler, consts)
+    # resampler = ClusterCentroids(random_state=42)
+    # main(csv_list, estimator, resampler, consts=consts)
 
-    # # trial 3
-    # estimator = ExtraTreesClassifier()
-    # resampler = RandomOverSampler(random_state=42)
-    # main(csv_list, estimator, resampler, consts)
+    # trial 2
+    estimator = ExtraTreesClassifier()
+    resampler = RandomUnderSampler(random_state=42)
+    main(csv_list, estimator, resampler, consts)
 
-    # # trial 4
-    # estimator = ExtraTreesClassifier()
-    # resampler = SMOTE(random_state=42, n_jobs=-1)
-    # main(csv_list, estimator, resampler, consts)
+    # trial 3
+    estimator = ExtraTreesClassifier()
+    resampler = RandomOverSampler(random_state=42)
+    main(csv_list, estimator, resampler, consts)
+
+    # trial 4
+    estimator = ExtraTreesClassifier()
+    resampler = SMOTE(random_state=42, n_jobs=-1)
+    main(csv_list, estimator, resampler, consts)
 
   else:
     print("You need to specify the CSV file to be loaded.", file=sys.stderr)

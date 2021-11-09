@@ -146,9 +146,9 @@ if __name__ == '__main__':
 
     # 定数の定義
     param_grid = [
-        # {'n_estimators': [2, 10, 100, 1000], 'min_samples_split': [2, 5, 10], 'min_samples_leaf': [1, 5, 10], 'max_features': ['sqrt', 'log2', None], 'bootstrap': [False], 'n_jobs': [-1], 'random_state': [42], 'max_samples': [0.01, 0.5, 0.09]},
-        # {'n_estimators': [2, 10, 100, 1000], 'min_samples_split': [2, 5, 10], 'min_samples_leaf': [1, 5, 10], 'max_features': ['sqrt', 'log2', None], 'bootstrap': [True], 'oob_score': [True, False], 'n_jobs': [-1], 'random_state': [42], 'max_samples': [0.01, 0.5, 0.09]}
-        {'n_estimators': [100, 300, 500, 800, 1000, 1300, 1500], 'min_samples_split': [2, 5, 10], 'min_samples_leaf': [1, 5, 10], 'max_features': ['sqrt', 'log2', None], 'bootstrap': [False], 'n_jobs': [-1], 'random_state': [42], 'max_samples': [0.01, 0.5, 0.09]},
+        {'n_estimators': [10, 100, 1000], 'min_samples_split': [2, 5, 10], 'min_samples_leaf': [1, 5, 10], 'max_features': ['sqrt', 'log2', None], 'bootstrap': [False], 'n_jobs': [-1], 'random_state': [42], 'max_samples': [0.01, 0.5, 0.09]},
+        {'n_estimators': [10, 100, 1000], 'min_samples_split': [2, 5, 10], 'min_samples_leaf': [1, 5, 10], 'max_features': ['sqrt', 'log2', None], 'bootstrap': [True], 'oob_score': [True, False], 'n_jobs': [-1], 'random_state': [42], 'max_samples': [0.01, 0.5, 0.09]}
+        # {'n_estimators': [100, 300, 500, 800, 1000, 1300, 1500], 'min_samples_split': [2, 5, 10], 'min_samples_leaf': [1, 5, 10], 'max_features': ['sqrt', 'log2', None], 'bootstrap': [False], 'n_jobs': [-1], 'random_state': [42], 'max_samples': [0.01, 0.5, 0.09]},
     ]
     consts = load_constants.ML_Consts(param_grid=param_grid)
 
