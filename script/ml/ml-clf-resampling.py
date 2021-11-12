@@ -11,6 +11,7 @@ from sklearn.model_selection import GridSearchCV
 from imblearn.pipeline import Pipeline as ImbPipeline
 from imblearn.under_sampling import RandomUnderSampler, ClusterCentroids
 from imblearn.over_sampling import RandomOverSampler, SMOTE
+from sklearn.pipeline import Pipeline
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from mylib import load_csv
@@ -20,115 +21,134 @@ from mylib import load_constants
 
 
 def main(csv_list: List, estimator, resampler, consts: load_constants.ML_Consts = None):
-  '''
-  Parameters
-  ----------
-  csv_list: array-like
-    読み込むCSVファイルのリスト
-  consts: load_constants.ML_Consts, default None
-    定数が定義されたML_Consts Classのインスタンス
+    '''
+    Parameters
+    ----------
+    csv_list: array-like
+      読み込むCSVファイルのリスト
+    consts: load_constants.ML_Consts, default None
+      定数が定義されたML_Consts Classのインスタンス
 
-  Returns
-  -------
-  '''
-  ####################
-  ### データ読み込み ###
-  ####################
-  # 定数の読み込み(引数で指定されていない場合)
-  if consts == None:
-    consts = load_constants.ML_Consts()
+    Returns
+    -------
+    '''
+    ####################
+    ### データ読み込み ###
+    ####################
+    # 定数の読み込み(引数で指定されていない場合)
+    if consts == None:
+        consts = load_constants.ML_Consts()
 
-  # CSVを読み込む
-  df = load_csv.CsvToDf(csv_list, consts.CSV_PATH)
-  # 訓練データとテストデータを分ける(式を評価するengineとしてnumexprを使用することで、処理の高速化を狙う。)
-  train_set = df.query('session_id == "trial1"', engine='numexpr')
-  test_set = df.query('session_id == "trial2"', engine='numexpr')
+    # CSVを読み込む
+    df = load_csv.CsvToDf(csv_list, consts.CSV_PATH)
+    # 訓練データとテストデータを分ける(式を評価するengineとしてnumexprを使用することで、処理の高速化を狙う。)
+    train_set = df.query('session_id == "trial1"', engine='numexpr')
+    test_set = df.query('session_id == "trial2"', engine='numexpr')
 
-  print("データ読み込み完了")
-  #########################
-  ### データのクリーニング ###
-  #########################
-  pl = pipeline_comps.MlPipeline(consts)
-  # 特徴量抽出パイプライン
-  X_train = pl.pick_features_pipeline.fit_transform(train_set)
-  X_test = pl.pick_features_pipeline.fit_transform(test_set)
-  # ラベル抽出パイプライン
-  y_train = pl.pick_label_pipeline.fit_transform(train_set)
-  y_test = pl.pick_label_pipeline.fit_transform(test_set)
+    print("データ読み込み完了")
+    #########################
+    ### データのクリーニング ###
+    #########################
+    pl = pipeline_comps.MlPipeline(consts)
+    # 特徴量抽出パイプライン
+    X_train = pl.pick_features_pipeline.fit_transform(train_set)
+    X_test = pl.pick_features_pipeline.fit_transform(test_set)
+    # ラベル抽出パイプライン
+    y_train = pl.pick_label_pipeline.fit_transform(train_set)
+    y_test = pl.pick_label_pipeline.fit_transform(test_set)
 
-  print('データのクリーニング完了')
-  ###########
-  ### 訓練 ###
-  ###########
-  # パイプライン
-  train_pipeline = ImbPipeline(steps=[('resmp', resampler), ('est', estimator)])
+    print('データのクリーニング完了')
+    ###########
+    ### 訓練 ###
+    ###########
+    # パイプライン
+    if resampler != None:
+        train_pipeline = ImbPipeline(
+            steps=[('resmp', resampler), ('est', estimator)])
+    else:
+        train_pipeline = Pipeline(steps=[('est', estimator)])
 
-  # グリッドサーチ
-  search = GridSearchCV(estimator=train_pipeline, param_grid=consts.PARAM_GRID, scoring=consts.SCORING, n_jobs=-1, refit=consts.REFIT_SCORING, cv=consts.NCV, return_train_score=False, verbose=2)
-  search.fit(X_train, y_train)
-  print('訓練完了')
+    # グリッドサーチ
+    search = GridSearchCV(estimator=train_pipeline, param_grid=consts.PARAM_GRID, scoring=consts.SCORING,
+                          n_jobs=-1, refit=consts.REFIT_SCORING, cv=consts.NCV, return_train_score=False, verbose=2)
+    search.fit(X_train, y_train)
+    print('訓練完了')
 
-  ###########
-  ### 検証 ###
-  ###########
-  best_resampler = search.best_estimator_['resmp']
+    ###########
+    ### 検証 ###
+    ###########
+    # resamplerの設定
+    if resampler != None:
+        best_resampler = search.best_estimator_['resmp']
+    else:
+        best_resampler = pipeline_comps.NoResampler()
 
-  best_estimator = search.best_estimator_['est']
+    best_estimator = search.best_estimator_['est']
 
-  # Accuracy, Balanced Accuracy, F1 Score
-  scores = cross_validate(best_estimator, X_test, y_test, scoring=consts.SCORING, cv=consts.NCV, n_jobs=-1)
+    # Accuracy, Balanced Accuracy, F1 Score
+    scores = cross_validate(best_estimator, X_test, y_test,
+                            scoring=consts.SCORING, cv=consts.NCV, n_jobs=-1)
 
-  # Confusion Matrix
-  y_test_pred = cross_val_predict(best_estimator, X_test, y_test, cv=consts.NCV, n_jobs=-1)
-  conf_mat = confusion_matrix(y_test, y_test_pred)
+    # Confusion Matrix
+    y_test_pred = cross_val_predict(
+        best_estimator, X_test, y_test, cv=consts.NCV, n_jobs=-1)
+    conf_mat = confusion_matrix(y_test, y_test_pred)
 
-  print('検証完了')
+    print('検証完了')
 
-  ################
-  ### 結果の出力 ###
-  ################
-  record = rec.RecModelDataToMdWithResampler(consts, csv_list, best_resampler, best_estimator, scores, conf_mat)
-  record.write()
+    ################
+    ### 結果の出力 ###
+    ################
+    record = rec.RecModelDataToMdWithResampler(
+        consts, csv_list, best_resampler, best_estimator, scores, conf_mat)
+    record.write()
 
 
 if __name__ == '__main__':
-  if len(sys.argv) > 1:
-    filename = sys.argv[1]
+    if len(sys.argv) > 1:
+        filename = sys.argv[1]
 
-    csv_list = []
-    for i in range(1, len(sys.argv)):
-      csv_list.append(sys.argv[i])
+        csv_list = []
+        for i in range(1, len(sys.argv)):
+            csv_list.append(sys.argv[i])
 
-    # パラメータの設定
-    param_grid = [
-        {'est__n_estimators': [10, 100, 500, 800, 1000], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': ['sqrt', 'log2', None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]},
-        {'est__n_estimators': [10, 100, 500, 800, 1000], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': ['sqrt', 'log2', None], 'est__bootstrap': [True], 'est__oob_score': [True, False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]}
-    ]
-    # param_grid = [
-    #   {'est__n_estimators': [10], 'est__min_samples_split': [2], 'est__min_samples_leaf': [5], 'est__max_features': [None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.5]}
-    # ]
-    consts = load_constants.ML_Consts(param_grid=param_grid)
+        # パラメータの設定
+        param_grid = [
+            {'est__n_estimators': [10, 100, 500, 800, 1000], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+                'sqrt', 'log2', None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]},
+            {'est__n_estimators': [10, 100, 500, 800, 1000], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+                'sqrt', 'log2', None], 'est__bootstrap': [True], 'est__oob_score': [True, False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]}
+        ]
+        # param_grid = [
+        #   {'est__n_estimators': [10], 'est__min_samples_split': [2], 'est__min_samples_leaf': [5], 'est__max_features': [
+        #       None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.5]}
+        # ]
+        consts = load_constants.ML_Consts(param_grid=param_grid)
 
-    # trial 1
-    estimator = ExtraTreesClassifier()
-    resampler = ClusterCentroids(random_state=42)
-    main(csv_list, estimator, resampler, consts=consts)
+        estimator = ExtraTreesClassifier()
+        resampler = None
+        main(csv_list, estimator, resampler, consts)
 
-    # trial 2
-    estimator = ExtraTreesClassifier()
-    resampler = RandomUnderSampler(random_state=42)
-    main(csv_list, estimator, resampler, consts)
+        # trial 1
+        estimator = RandomForestClassifier()
+        resampler = ClusterCentroids(random_state=42)
+        main(csv_list, estimator, resampler, consts=consts)
 
-    # trial 3
-    estimator = ExtraTreesClassifier()
-    resampler = RandomOverSampler(random_state=42)
-    main(csv_list, estimator, resampler, consts)
+        # trial 2
+        estimator = RandomForestClassifier()
+        resampler = RandomUnderSampler(random_state=42)
+        main(csv_list, estimator, resampler, consts)
 
-    # trial 4
-    estimator = ExtraTreesClassifier()
-    resampler = SMOTE(random_state=42, n_jobs=-1)
-    main(csv_list, estimator, resampler, consts)
+        # trial 3
+        estimator = RandomForestClassifier()
+        resampler = RandomOverSampler(random_state=42)
+        main(csv_list, estimator, resampler, consts)
 
-  else:
-    print("You need to specify the CSV file to be loaded.", file=sys.stderr)
-    sys.exit(1)
+        # trial 4
+        estimator = RandomForestClassifier()
+        resampler = SMOTE(random_state=42, n_jobs=-1)
+        main(csv_list, estimator, resampler, consts)
+
+    else:
+        print("You need to specify the CSV file to be loaded.", file=sys.stderr)
+        sys.exit(1)
