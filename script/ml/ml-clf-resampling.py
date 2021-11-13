@@ -42,8 +42,8 @@ def main(csv_list: List, estimator, resampler, consts: load_constants.ML_Consts 
     # CSVを読み込む
     df = load_csv.CsvToDf(csv_list, consts.CSV_PATH)
     # 訓練データとテストデータを分ける(式を評価するengineとしてnumexprを使用することで、処理の高速化を狙う。)
-    train_set = df.query('session_id == "trial-rf-"', engine='numexpr')
-    test_set = df.query('session_id == "trial-rf-"', engine='numexpr')
+    train_set = df.query('session_id == "trial1"', engine='numexpr')
+    test_set = df.query('session_id == "trial2"', engine='numexpr')
 
     print("データ読み込み完了")
     #########################
