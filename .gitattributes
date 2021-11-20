@@ -1,2 +1,4 @@
-script/ml/result/ExtraTreesClassifier_2021-10-31_no1/ExtraTreesClassifier_2021-10-31_no1.pkl filter=lfs diff=lfs merge=lfs -text
-script/ml/result/ExtraTreesClassifier_2021-11-01_no1/ExtraTreesClassifier_2021-11-01_no1.pkl filter=lfs diff=lfs merge=lfs -text
+# script/ml/result/ExtraTreesClassifier_2021-10-31_no1/ExtraTreesClassifier_2021-10-31_no1.pkl filter=lfs diff=lfs merge=lfs -text
+# script/ml/result/ExtraTreesClassifier_2021-11-01_no1/ExtraTreesClassifier_2021-11-01_no1.pkl filter=lfs diff=lfs merge=lfs -text
+out/ml_model_result/ExtraTreesClassifier_2021-10-31_no1/ExtraTreesClassifier_2021-10-31_no1.pkl filter=lfs diff=lfs merge=lfs -text
+out/ml_model_result/ExtraTreesClassifier_2021-11-01_no1/ExtraTreesClassifier_2021-11-01_no1.pkl filter=lfs diff=lfs merge=lfs -text
