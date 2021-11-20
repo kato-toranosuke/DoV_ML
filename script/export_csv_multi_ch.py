@@ -4,7 +4,6 @@
 import csv
 import sys
 import os
-from typing import List, Any, Union, Dict
 
 # 自作ライブラリのパス追加
 # sys.path.append('..')
@@ -35,8 +34,8 @@ def createCsv(filename: str = 'features.csv') -> None:
         writer = csv.writer(f)
 
         # ヘッダー行を追加する
-        header_attr = ['id', 'filename', 'participant', 'room', 'placement', 'session', 'polar_position', 
-                  'utterance', 'dov_angle', 'channel']
+        header_attr = ['id', 'filename', 'participant', 'room', 'placement', 'session', 'polar_position',
+                       'utterance', 'dov_angle', 'channel']
         header_feature_vals = ['low_power', 'high_power', 'hlbr', 'coe1[0]', 'coe1[1]', 'coe3[0]', 'coe3[1]', 'coe3[2]', 'coe3[3]',
                                'ratio_max_to_10ms_ave_peaks', 'ratio_max_to_9th_ave_peaks', 'ac_std', 'ac_auc', 'diff_std', 'diff_auc', 'srmr']
         header_gp_tdoa = ['gp_max_val_ch1', 'gp_max_ix_ch1', 'gp_auc_ch1', 'tdoa_ch1', 'gp_max_val_ch2', 'gp_max_ix_ch2', 'gp_auc_ch2', 'tdoa_ch2',
@@ -45,7 +44,7 @@ def createCsv(filename: str = 'features.csv') -> None:
         # 書き込む
         writer.writerow(header)
 
-        num = 0 #　カウンター
+        num = 0  # 　カウンター
         # 特徴量を計算
         ff_gen = ff.FetchFeaturesFromDataset(DATASET_PATH)
         for rows in ff_gen:
@@ -60,6 +59,7 @@ def createCsv(filename: str = 'features.csv') -> None:
             if(num % 20 == 0):
                 print(f'flush data to a csv file: {filename}.')
                 f.flush()
+
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
