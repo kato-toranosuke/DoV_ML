@@ -13,7 +13,7 @@ from imblearn.under_sampling import RandomUnderSampler, ClusterCentroids
 from imblearn.over_sampling import RandomOverSampler, SMOTE
 from sklearn.pipeline import Pipeline
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from mylib import load_csv
 from mylib import ml_pipeline_components as pipeline_comps
 from mylib import record_model_data as rec
