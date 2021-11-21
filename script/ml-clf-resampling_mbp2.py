@@ -114,73 +114,73 @@ if __name__ == '__main__':
 
         # 定数の設定
         # 探索パラメータ
-        param_grid = [
-            {'est__n_estimators': range(100, 1600, 100), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
-                'sqrt', 'log2', None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]},
-            {'est__n_estimators': range(100, 1600, 100), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
-                'sqrt', 'log2', None], 'est__bootstrap': [True], 'est__oob_score': [True, False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]}
-        ]
         # param_grid = [
-        #   {'est__n_estimators': range(10, 30, 10), 'est__min_samples_split': [2], 'est__min_samples_leaf': [5], 'est__max_features': [
-        #       None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.5]}
+        #     {'est__n_estimators': range(100, 1600, 100), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+        #         'sqrt', 'log2', None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]},
+        #     {'est__n_estimators': range(100, 1600, 100), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+        #         'sqrt', 'log2', None], 'est__bootstrap': [True], 'est__oob_score': [True, False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]}
         # ]
+        param_grid = [
+          {'est__n_estimators': range(10, 30, 10), 'est__min_samples_split': [2], 'est__min_samples_leaf': [5], 'est__max_features': [
+              None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.5]}
+        ]
 
         # 特徴量(最大値・最小値を除外)
         feature_attrbs_no_max_min = ['low_power', 'high_power', 'hlbr', 'coe1[0]', 'coe1[1]', 'coe3[0]', 'coe3[1]', 'coe3[2]', 'coe3[3]', 'ratio_max_to_10ms_ave_peaks', 'ratio_max_to_9th_ave_peaks', 'ac_std', 'ac_auc', 'diff_std',
                                      'diff_auc', 'srmr', 'gp_max_val_std', 'gp_max_val_range', 'gp_max_val_mean', 'gp_max_ix_std', 'gp_max_ix_range', 'gp_max_ix_mean', 'gp_auc_std', 'gp_auc_range', 'gp_auc_mean', 'tdoa_std', 'tdoa_range', 'tdoa_mean']
 
         consts = load_constants.ML_Consts(
-            param_grid=param_grid, feature_attrbs=feature_attrbs_no_max_min)
+            param_grid=param_grid, facing_dov_angles=[0])
 
-        # trial-rf-0
-        estimator = RandomForestClassifier()
-        resampler = None
-        main(csv_list, estimator, resampler, consts)
+        # # trial-rf-0
+        # estimator = RandomForestClassifier()
+        # resampler = None
+        # main(csv_list, estimator, resampler, consts)
 
-        # trial-rf-1
-        estimator = RandomForestClassifier()
-        resampler = ClusterCentroids(random_state=42)
-        main(csv_list, estimator, resampler, consts)
+        # # trial-rf-1
+        # estimator = RandomForestClassifier()
+        # resampler = ClusterCentroids(random_state=42)
+        # main(csv_list, estimator, resampler, consts)
 
-        # trial-rf-2
-        estimator = RandomForestClassifier()
-        resampler = RandomUnderSampler(random_state=42)
-        main(csv_list, estimator, resampler, consts)
+        # # trial-rf-2
+        # estimator = RandomForestClassifier()
+        # resampler = RandomUnderSampler(random_state=42)
+        # main(csv_list, estimator, resampler, consts)
 
-        # trial-rf-3
-        estimator = RandomForestClassifier()
-        resampler = RandomOverSampler(random_state=42)
-        main(csv_list, estimator, resampler, consts)
+        # # trial-rf-3
+        # estimator = RandomForestClassifier()
+        # resampler = RandomOverSampler(random_state=42)
+        # main(csv_list, estimator, resampler, consts)
 
-        # trial-rf-4
-        estimator = RandomForestClassifier()
-        resampler = SMOTE(random_state=42, n_jobs=-1)
-        main(csv_list, estimator, resampler, consts)
+        # # trial-rf-4
+        # estimator = RandomForestClassifier()
+        # resampler = SMOTE(random_state=42, n_jobs=-1)
+        # main(csv_list, estimator, resampler, consts)
 
         # trial-exf-0
         estimator = ExtraTreesClassifier()
         resampler = None
         main(csv_list, estimator, resampler, consts)
 
-        # trial-exf-1
-        estimator = ExtraTreesClassifier()
-        resampler = ClusterCentroids(random_state=42)
-        main(csv_list, estimator, resampler, consts)
+        # # trial-exf-1
+        # estimator = ExtraTreesClassifier()
+        # resampler = ClusterCentroids(random_state=42)
+        # main(csv_list, estimator, resampler, consts)
 
-        # trial-exf-2
-        estimator = ExtraTreesClassifier()
-        resampler = RandomUnderSampler(random_state=42)
-        main(csv_list, estimator, resampler, consts)
+        # # trial-exf-2
+        # estimator = ExtraTreesClassifier()
+        # resampler = RandomUnderSampler(random_state=42)
+        # main(csv_list, estimator, resampler, consts)
 
-        # trial-exf-3
-        estimator = ExtraTreesClassifier()
-        resampler = RandomOverSampler(random_state=42)
-        main(csv_list, estimator, resampler, consts)
+        # # trial-exf-3
+        # estimator = ExtraTreesClassifier()
+        # resampler = RandomOverSampler(random_state=42)
+        # main(csv_list, estimator, resampler, consts)
 
-        # trial-exf-4
-        estimator = ExtraTreesClassifier()
-        resampler = SMOTE(random_state=42, n_jobs=-1)
-        main(csv_list, estimator, resampler, consts)
+        # # trial-exf-4
+        # estimator = ExtraTreesClassifier()
+        # resampler = SMOTE(random_state=42, n_jobs=-1)
+        # main(csv_list, estimator, resampler, consts)
 
     else:
         print("You need to specify the CSV file to be loaded.", file=sys.stderr)
