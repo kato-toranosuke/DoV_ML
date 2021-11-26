@@ -7,7 +7,7 @@ import datetime
 import os
 import re
 import joblib
-from .load_constants import ML_Consts
+from .load_constants import ML_Consts, Exp_Consts
 
 
 class RecModelDataToMarkdown():
@@ -296,3 +296,52 @@ class RecModelDataToMdWithResampler(RecModelDataToMarkdown):
 
         dir_name = est_str + '_' + resmp_str + '_' + d_today + '_no' + str(no)
         return dir_name
+
+class RecExpResultToMarkdown(RecModelDataToMarkdown):
+    def __init__(self, fname: str, consts: Exp_Consts, accuracy_score, balanced_accuracy_score, f1_score, confusion_matrix, pkl_fname, train_filename_list, test_filename_list) -> None:
+        super().__init__(fname, consts, None, None, None, None, None)
+        self.accuracy_score = accuracy_score
+        self.balanced_accuracy_score = balanced_accuracy_score
+        self.f1_score = f1_score
+        self.conf_mat = confusion_matrix
+
+        self.train_filename_list = train_filename_list
+        self.test_filename_list = test_filename_list
+        self.pkl_fname = pkl_fname
+
+    def write(self):
+        result_file_path = self.consts.OUTPUT_PATH + '/' + \
+            self.GetDirname(self.fname, self.consts.OUTPUT_PATH) + '.md'
+
+        with open(result_file_path, 'w') as f:
+            output_str = '# ' + self.fname + '\n'
+            # 定数の記録
+            output_str += "## Constants\n" + \
+                self.GetInstanceValStr(self.consts)
+            # CSV
+            output_str += '## Loaded CSV\n'
+            output_str += '### Training Data\n'
+            output_str += self.GetListStr(self.train_filename_list)
+            output_str += '### Test Data\n'
+            output_str += self.GetListStr(self.test_filename_list)
+
+            # pklファイル
+            output_str += "## Pkl File\n"
+            output_str += self.pkl_fname
+
+            # 評価
+            output_str += '## Evaluation\n'
+            output_str += f'- accuracy score: {self.accuracy_score}\n'
+            output_str += f'- balanced accuracy score: {self.balanced_accuracy_score}\n'
+            output_str += f'- f1 score: {self.f1_score}\n'
+            output_str += '- confusion matrix:\n'
+            output_str += f"""\
+|  | Predicted Negative | Predicted Positive |
+| --- | --- | --- |
+| Actual Negative | {self.conf_mat[0][0]} | {self.conf_mat[0][1]} |
+| Actual Positive | {self.conf_mat[1][0]} | {self.conf_mat[1][1]} |
+
+      """
+            f.writelines(output_str)
+
+        print(f'Complete!\nResult file is {result_file_path}')
