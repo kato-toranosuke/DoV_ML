@@ -6,9 +6,12 @@ from .fft import fft
 from typing import List, Any, Union, Dict
 from srmrpy.srmr import *
 
-def FetchFeaturesFromMonoData2(v: List, fs: int, N: int, overlap: Union[int, float], th: Union[int, float] = 7000, w: int = 3, sec_range: float = 0.01, nth: int = 9):
+def FetchFeaturesFromMonoDataNo128Fitting(v: List, fs: int, N: int, overlap: Union[int, float], th: Union[int, float] = 7000, w: int = 3, sec_range: float = 0.01, nth: int = 9):
     '''
     単一の音声データから特徴量を取得する。
+    FetchFeaturesFromMonoData()との相違点。
+    - 128bitのFFTにfittingした1次多項式がない。
+    - 128bitのFFTにfittingした3次多項式がない。
 
     Parameters
     ----------
@@ -47,7 +50,7 @@ def FetchFeaturesFromMonoData2(v: List, fs: int, N: int, overlap: Union[int, flo
     ratio_max_to_10ms_ave_peaks = fff.GetRatioMaxToOtherAvePeaks(
         v, w, fs, sec_range)
     # 最大ピークと、次に高い9つのピークの平均値の比
-    ratio_max_to_9th_ave_peaks = fff.GetRatioMaxToNthAvePeaks(v, w, nth+1)
+    ratio_max_to_9th_ave_peaks = fff.GetRatioMaxToNthAvePeaks(v, w, nth + 1)
 
     # 自己相関の標準偏差と曲線下面積
     ac, ac_std, ac_auc = fff.AutocorStdAuc(v)
@@ -108,7 +111,7 @@ def FetchFeaturesFromMonoData(v: List, fs: int, N: int, overlap: Union[int, floa
     ratio_max_to_10ms_ave_peaks = fff.GetRatioMaxToOtherAvePeaks(
         v, w, fs, sec_range)
     # 最大ピークと、次に高い9つのピークの平均値の比
-    ratio_max_to_9th_ave_peaks = fff.GetRatioMaxToNthAvePeaks(v, w, nth+1)
+    ratio_max_to_9th_ave_peaks = fff.GetRatioMaxToNthAvePeaks(v, w, nth + 1)
 
     # 自己相関の標準偏差と曲線下面積
     ac, ac_std, ac_auc = fff.AutocorStdAuc(v)
