@@ -5,42 +5,91 @@ import joblib
 import sys
 import os
 from typing import List
-from export_csv_mono_ch import createCsv
+import argparse
+from export_csv_mono_ch import createWav2Csv
+from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score, confusion_matrix
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from mylib.load_constants import ML_Consts
+from mylib.load_constants import Exp_Consts
 from mylib.load_csv import CsvToDf
 from mylib.ml_pipeline_components import MlPipeline
+from mylib.record_model_data import RecExpResultToMarkdown
 
+class MlPred():
+    def __init__(self, train_filename_list: List, test_filename_list: List, pkl_path: str, csv_filename: str) -> None:
+        self.consts = Exp_Consts(dataset_path='../../experiment_dataset/2021-11-26',
+                                 train_csv_path='../out/csv',
+                                 test_csv_path='../out/csv/experiment',
+                                 output_path='../out/experiment_result')
+        self.train_filename_list = train_filename_list
+        self.test_filename_list = test_filename_list
+        self.pkl_path = pkl_path
+        self.csv_filename = csv_filename
 
-def main(csv_filename_list: List, pkl_path: str):
-    consts = ML_Consts(csv_path='../out/csv/experiment',
-                       dataset_path='hoge/hoge', output_path='hoge/hoge')
-    filename = 'hoge'
-    # wav -> csv
-    createCsv(filename, consts.OUTPUT_PATH, consts.DATASET_PATH)
+    def wav2csv(self):
+        # wav -> csv
+        createWav2Csv(self.csv_filename, self.consts.DATASET_PATH,
+                      self.consts.TEST_CSV_PATH, w=1, N=2**12, overlap=80)
 
-    # csv -> DataFrame
-    df = CsvToDf(csv_filename_list, consts.CSV_PATH)
-    # train_set_trial = ['trial1', 'trial2']
-    # test_set_trial = ['trial3']
-    # train_set = df[df['session_id'].isin(train_set_trial)]
-    # test_set = df[df['session_id'].isin(test_set_trial)]
-    print("データの読み込み完了")
+    def main(self):
+        # [training data] csv -> DataFrame
+        df_train = CsvToDf(self.train_filename_list,
+                           self.consts.TRAIN_CSV_PATH)
+        # [test data] csv -> DataFrame
+        df_test = CsvToDf(self.test_filename_list, self.consts.TEST_CSV_PATH)
+        # train_set_trial = ['trial1', 'trial2']
+        # test_set_trial = ['trial3']
+        # train_set = df[df['session_id'].isin(train_set_trial)]
+        # test_set = df[df['session_id'].isin(test_set_trial)]
+        print("CSV->DataFrameへの変換完了")
 
-    # データのクリーニング
-    pl = MlPipeline(consts)
-    X = pl.pick_features_pipeline(df)
-    y = pl.pick_label_pipeline(df)
-    print('データのクリーニングが完了')
+        # 特徴量とラベルの分離
+        pl = MlPipeline(self.consts)
+        X_train = pl.pick_features_pipeline(df_train)
+        y_train = pl.pick_label_pipeline(df_train)
+        X_test = pl.pick_features_pipeline(df_test)
+        y_test = pl.pick_label_pipeline(df_test)
+        print('特徴量とラベルの分離完了')
 
-    # 予測
-    model = joblib.load(pkl_path)
+        # 学習
+        model = joblib.load(self.pkl_path)
+        model.fit(X_train, y_train)
+        print('学習完了')
 
-    # 正答率の算出
+        # 予測
+        predict_label = model.predict(X_test)
+        print('予測完了')
+
+        # 正答率の算出
+        # accuracy
+        accuracy = accuracy_score(y_test, predict_label)
+        print(f'accuracy_score: {accuracy}')
+        # balanced_accuracy
+        balanced_accuracy = balanced_accuracy_score(y_test, predict_label)
+        print(f'balanced_accuracy_score: {balanced_accuracy}')
+        # f1
+        f1 = f1_score(y_test, predict_label)
+        print(f'f1_score: {f1}')
+        # confusion matrix
+        conf_mat = confusion_matrix(y_test, predict_label)
+        print(f'confusion matrix: {conf_mat}')
+
+        # 記録
+        fname = ''
+        record = RecExpResultToMarkdown(fname, self.consts, accuracy, balanced_accuracy,
+                                        f1, conf_mat, self.pkl_path, self.train_filename_list, self.test_filename_list)
+        record.write()
 
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        csv_filename_list = []
-        for i in range(1, len(sys.argv)):
-            csv_filename_list.append(sys.argv[i])
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--train_files', nargs='+', required=True)
+    parser.add_argument('--test_files', nargs='+', required=True)
+    parser.add_argument('--pkl_path', default=None)
+    parser.add_argument('--csv_filename', default=None)
+
+    args = parser.parse_args()
+
+    eng = MlPred(args.train_files, args.test_files,
+                 args.pkl_path, args.csv_filename)
+    # wav -> csv
+    eng.wav2csv()

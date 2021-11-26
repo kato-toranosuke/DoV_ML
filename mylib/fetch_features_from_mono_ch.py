@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-from . import fetch_features_func as fff
-from . import cis
+from sys import stderr
 from typing import List, Any, Union, Dict
 import itertools
 import numpy as np
+import os
+import sys
+from . import fetch_features_func as fff
+from . import cis
 from . import fetch_features as ff
 
-def GetRowData(dir_path: str, attr: Dict, gp_tdoa_mic_channels: List, w: int, N: int, overlap: Union[int, float]) -> List:
+def GetRowData(dir_path: str, attr: Dict, gp_tdoa_mic_channels: List, w: int, N: Union[int, str] = 'full', overlap: Union[int, float] = 0.8) -> List:
     '''
     音声ファイルに対応する特徴量の抽出。
 
@@ -21,7 +24,7 @@ def GetRowData(dir_path: str, attr: Dict, gp_tdoa_mic_channels: List, w: int, N:
     gp_tdoa_mic_channels: 
     w: int
         ピーク検出に対する感度
-    N : int
+    N : int or str
         FFTのサイズ
     overlap : int or float
         FFTのオーバーラップ率
@@ -36,22 +39,27 @@ def GetRowData(dir_path: str, attr: Dict, gp_tdoa_mic_channels: List, w: int, N:
     ##########################
 
     # channel0のファイルパス
-    filename = attr['utterance_id'] + '_' + attr['dov_angle'] + '_' + str(attr['mic_channel']) + '.wav'
+    filename = attr['utterance_id'] + '_' + \
+        attr['dov_angle'] + '_' + str(attr['mic_channel']) + '.wav'
     file_path = dir_path + '/' + filename
+
+    # 指定したfile_pathに該当するwavがない場合、スキップする
+    if not os.path.isfile(file_path):
+        raise FileNotFoundError(file_path + ' is not found!')
 
     id = attr['id']
     print(f'id: {id}, file path: {file_path}')
 
     # channel0の音声データを読み込む
-    # v, fs = cis.wavread(file_path)
+    v, fs = cis.wavread(file_path)
 
     # 特徴量を得る
-    # features = ff.FetchFeaturesFromMonoData(v, fs, N, overlap, w=w)
+    features = ff.FetchFeaturesFromMonoData(v, fs, N, overlap, w=w)
 
     # FFTサイズ
     # N = 2**12
     # 特徴量を得る
-    # features = ff.FetchFeaturesFromMonoData2(v, fs, N, overlap, w=w)
+    # features = ff.FetchFeaturesFromMonoDataNo128Fitting(v, fs, N, overlap, w=w)
 
     #######################
     ### GCC-PHAT & TDOA ###
@@ -60,7 +68,8 @@ def GetRowData(dir_path: str, attr: Dict, gp_tdoa_mic_channels: List, w: int, N:
     # channel1~4の音声データを読み込む
     voice_data = []
     for ch in gp_tdoa_mic_channels:
-        fname = attr['utterance_id'] + '_' + attr['dov_angle'] + '_' + str(ch) + '.wav'
+        fname = attr['utterance_id'] + '_' + \
+            attr['dov_angle'] + '_' + str(ch) + '.wav'
         fpath = dir_path + '/' + fname
         v_, fs_ = cis.wavread(fpath)
         voice_data.append([v_, fs_])
@@ -84,7 +93,8 @@ def GetRowData(dir_path: str, attr: Dict, gp_tdoa_mic_channels: List, w: int, N:
         fs = voice_data[ix1][1]
 
         # GCC-PHATとTDOAを計算
-        gp_max_val, gp_max_ix, gp_auc, tdoa = fff.GetGccPhatAndTdoa(v1, v2, fs = fs, w = w)
+        gp_max_val, gp_max_ix, gp_auc, tdoa = fff.GetGccPhatAndTdoa(
+            v1, v2, fs=fs, w=w)
 
         # 配列に格納する
         pair_gp_tdoa_features.append([gp_max_val, gp_max_ix, gp_auc, tdoa])
@@ -105,15 +115,16 @@ def GetRowData(dir_path: str, attr: Dict, gp_tdoa_mic_channels: List, w: int, N:
     ###############
     ### 属性情報 ###
     ###############
-    attr = [attr['id'], filename, attr['participant_id'], attr['room_id'], attr['device_placement_id'], attr['session_id'], attr['polar_position_id'], attr['distance'], attr['polar_angle'], attr['utterance_id'], attr['dov_angle'], attr['mic_channel']]
+    attr = [attr['id'], filename, attr['participant_id'], attr['room_id'], attr['device_placement_id'], attr['session_id'],
+            attr['polar_position_id'], attr['distance'], attr['polar_angle'], attr['utterance_id'], attr['dov_angle'], attr['mic_channel']]
 
     # 行情報を生成
-    # row = attr + features + gp_tdoa_features
-    row = attr + gp_tdoa_features
+    row = attr + features + gp_tdoa_features
+    # row = attr + gp_tdoa_features
 
     return row
 
-def FetchFeaturesFromDataset(DATASET_PATH: str, w: int, N: int, overlap: Union[int, float]) -> List:
+def FetchFeaturesFromDataset(DATASET_PATH: str, w: int, N: Union[int, str], overlap: Union[int, float]) -> List:
     '''
     データセットの音声データから特徴量を抽出する関数
 
@@ -123,7 +134,7 @@ def FetchFeaturesFromDataset(DATASET_PATH: str, w: int, N: int, overlap: Union[i
         datasetへのpath
     w: int
         ピーク検出に対する感度
-    N : int
+    N : int or str
         FFTのサイズ
     overlap : int or float
         FFTのオーバーラップ率
@@ -139,13 +150,13 @@ def FetchFeaturesFromDataset(DATASET_PATH: str, w: int, N: int, overlap: Union[i
     ####################
 
     # 被験者
-    participant_ids = ['s' + str(i) for i in range(1, 11)]
+    participant_ids = ['s' + str(i) for i in range(1, 12)]
     # 発言
     utterance_ids = ['recording' + str(i) for i in range(2)]
     # セッション
-    session_ids = ['trial1', 'trial2']
+    session_ids = ['trial' + str(i) for i in range(1, 7)]
     # 部屋
-    room_ids = ['upstairs', 'downstairs']
+    room_ids = ['upstairs', 'downstairs', 'onshinlab', 'gym']
     # 設置場所
     device_placement_ids = ['wall', 'nowall']
     # ユーザ距離
@@ -180,8 +191,8 @@ def FetchFeaturesFromDataset(DATASET_PATH: str, w: int, N: int, overlap: Union[i
                         for polar_angle_ix, polar_angle_id in enumerate(polar_angle_ids):
                             polar_position_id = distance_id + \
                                 str(polar_angle_id)
-                            distance = 2*distance_ix + 1
-                            polar_angle = 45*polar_angle_ix
+                            distance = 2 * distance_ix + 1
+                            polar_angle = 45 * polar_angle_ix
                             # 第3階層
                             third_dir_name = polar_position_id + '_' + \
                                 str(distance) + '_' + str(polar_angle)
@@ -201,7 +212,8 @@ def FetchFeaturesFromDataset(DATASET_PATH: str, w: int, N: int, overlap: Union[i
                                     #     continue
 
                                     # 音声ファイルが格納されているディレクトリまでのパス
-                                    dir_path = DATASET_PATH + '/' + first_dir_name + '/' + second_dir_name + '/' + third_dir_name
+                                    dir_path = DATASET_PATH + '/' + first_dir_name + \
+                                        '/' + second_dir_name + '/' + third_dir_name
 
                                     # 属性値を格納する辞書の作成
                                     attr = {}
@@ -217,12 +229,16 @@ def FetchFeaturesFromDataset(DATASET_PATH: str, w: int, N: int, overlap: Union[i
                                     attr['dov_angle'] = dov_angle
                                     attr['mic_channel'] = mic_channel
 
-                                    row = GetRowData(dir_path, attr, gp_tdoa_mic_channels, w=w, N=N, overlap=overlap)
-
-                                    # 配列に追加
-                                    rows.append(row)
-
-                                    id = id + 1
+                                    try:
+                                        row = GetRowData(
+                                            dir_path, attr, gp_tdoa_mic_channels, w=w, N=N, overlap=overlap)
+                                    except FileNotFoundError as e:
+                                        # print(e, file=sys.stderr)
+                                        continue
+                                    else:
+                                        # 配列に追加
+                                        rows.append(row)
+                                        id = id + 1
 
                                 # 第３階層以下同一語句のファイルについて計算が終われば、一旦出力する。
                                 yield rows
