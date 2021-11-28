@@ -21,12 +21,18 @@ class ML_Consts():
 class Exp_Consts(ML_Consts):
     '''
     機械学習に用いる定数を定義するクラス
+
+    Attributes
+    ----------
+    FITTIG_PKL_PATH : str
+        Modelに訓練データをfittingした結果を保存したpklファイルが格納されているディレクトリへのパス
     '''
 
-    def __init__(self, dataset_path='../../experiment_dataset/2021-11-19', train_csv_path='../out/csv', test_csv_path=None, output_path="../out/experiment_result", csv_path="../out/csv", feature_attrbs=['low_power', 'high_power', 'hlbr', 'coe1[0]', 'coe1[1]', 'coe3[0]', 'coe3[1]', 'coe3[2]', 'coe3[3]', 'ratio_max_to_10ms_ave_peaks', 'ratio_max_to_9th_ave_peaks', 'ac_std', 'ac_auc', 'diff_std', 'diff_auc', 'srmr', 'gp_max_val_std', 'gp_max_val_range', 'gp_max_val_min', 'gp_max_val_max', 'gp_max_val_mean', 'gp_max_ix_std', 'gp_max_ix_range', 'gp_max_ix_min', 'gp_max_ix_max', 'gp_max_ix_mean', 'gp_auc_std', 'gp_auc_range', 'gp_auc_min', 'gp_auc_max', 'gp_auc_mean', 'tdoa_std', 'tdoa_range', 'tdoa_min', 'tdoa_max', 'tdoa_mean'], label_attrb=['dov_angle'], facing_dov_angles=[0, 45, 315], ncv=10, scoring=['accuracy', 'balanced_accuracy', 'f1'], refit_scoring='balanced_accuracy', param_grid=None):
+    def __init__(self, fitting_pkl_path='../out/ml_model_fitting_result', dataset_path='../../experiment_dataset/2021-11-19', train_csv_path='../out/csv', test_csv_path=None, output_path="../out/experiment_result", csv_path="../out/csv", feature_attrbs=['low_power', 'high_power', 'hlbr', 'coe1[0]', 'coe1[1]', 'coe3[0]', 'coe3[1]', 'coe3[2]', 'coe3[3]', 'ratio_max_to_10ms_ave_peaks', 'ratio_max_to_9th_ave_peaks', 'ac_std', 'ac_auc', 'diff_std', 'diff_auc', 'srmr', 'gp_max_val_std', 'gp_max_val_range', 'gp_max_val_min', 'gp_max_val_max', 'gp_max_val_mean', 'gp_max_ix_std', 'gp_max_ix_range', 'gp_max_ix_min', 'gp_max_ix_max', 'gp_max_ix_mean', 'gp_auc_std', 'gp_auc_range', 'gp_auc_min', 'gp_auc_max', 'gp_auc_mean', 'tdoa_std', 'tdoa_range', 'tdoa_min', 'tdoa_max', 'tdoa_mean'], label_attrb=['dov_angle'], facing_dov_angles=[0, 45, 315], ncv=10, scoring=['accuracy', 'balanced_accuracy', 'f1'], refit_scoring='balanced_accuracy', param_grid=None):
         # インスタンス変数
         super().__init__(csv_path, output_path, feature_attrbs, label_attrb,
                          facing_dov_angles, ncv, scoring, refit_scoring, param_grid)
         self.DATASET_PATH = dataset_path
         self.TRAIN_CSV_PATH = train_csv_path
         self.TEST_CSV_PATH = test_csv_path
+        self.FITTING_PKL_PATH = fitting_pkl_path
