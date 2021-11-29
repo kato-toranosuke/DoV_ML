@@ -8,11 +8,14 @@ from typing import List
 import argparse
 from export_csv_mono_ch import createWav2Csv
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score, confusion_matrix
+from sklearn.model_selection import cross_val_predict, cross_validate
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from mylib.load_constants import Exp_Consts
 from mylib.load_csv import CsvToDf
 from mylib.ml_pipeline_components import MlPipeline
 from mylib.record_model_data import RecExpResultToMarkdown
+from mylib import record_model_data as rec
 
 class MlPred():
     def __init__(self, train_filename_list: List = None, test_filename_list: List = None, input_pkl_filename: str = None, output_pkl_filename: str = None, csv_filename: str = None) -> None:
@@ -77,7 +80,7 @@ class MlPred():
         joblib.dump(model, output_pkl_filepath)
         print(f'pklへの出力: {output_pkl_filepath}')
 
-    def predict(self, test_filename_list: List = None, test_csv_path: str = None, test_set_trial: List = None, input_pkl_filename: str = None):
+    def fit_predict(self, test_filename_list: List = None, test_csv_path: str = None, test_set_trial: List = None, input_pkl_filename: str = None):
         # [test data] csv -> DataFrame
         if test_filename_list == None:
             test_filename_list = self.test_filename_list
@@ -99,8 +102,53 @@ class MlPred():
         y_test = pl.pick_label_pipeline.fit_transform(test_set)
         print('特徴量とラベルの分離完了')
 
-        print(y_test)
-        return
+        # モデルの読み込み
+        if input_pkl_filename == None:
+            # fitしてないpklファイルを使用
+            input_pkl_filename = self.input_pkl_filename
+        input_pkl_filepath = self.consts.INPUT_PKL_PATH + '/' + \
+            input_pkl_filename + '/' + input_pkl_filename + '.pkl'
+        model = joblib.load(input_pkl_filepath)
+        print(f'ハイパーパラメータ調整済みのモデルを読み込む: {input_pkl_filepath}')
+
+        # Accuracy, Balanced Accuracy, F1 Score
+        scores = cross_validate(model, X_test, y_test,
+                                scoring=self.consts.SCORING, cv=self.consts.NCV, n_jobs=-1)
+        print(scores)
+        # Confusion Matrix
+        y_test_pred = cross_val_predict(
+            model, X_test, y_test, cv=self.consts.NCV, n_jobs=-1)
+        conf_mat = confusion_matrix(y_test, y_test_pred)
+        print(conf_mat)
+
+        print('検証完了')
+
+        # 結果の出力
+        record = rec.RecModelDataToMdWithResampler(
+            self.consts, test_filename_list, None, model, scores, conf_mat)
+        record.write()
+
+    def predict(self, test_filename_list: List = None, test_csv_path: str = None, test_set_trial: List = None, input_pkl_filename: str = None):
+        # [test data] csv -> DataFrame
+        if test_filename_list == None:
+            test_filename_list = self.test_filename_list
+        if test_csv_path == None:
+            test_csv_path = self.consts.TEST_CSV_PATH
+        df_test = CsvToDf(test_filename_list, test_csv_path)
+
+        # testに使用するsessionの抽出
+        if test_set_trial != None:
+            test_set = df_test[df_test['session_id'].isin(test_set_trial)]
+        else:
+            test_set = df_test
+
+        print("CSV->DataFrameへの変換完了")
+
+        # 特徴量とラベルの分離
+        pl = MlPipeline(self.consts)
+        X_test = pl.pick_features_pipeline.fit_transform(test_set)
+        y_test = pl.pick_label_pipeline.fit_transform(test_set)
+        print('特徴量とラベルの分離完了')
 
         # モデルの読み込み
         if input_pkl_filename == None:
@@ -195,8 +243,45 @@ if __name__ == '__main__':
 
     eng = MlPred(train_filename_list=args.train_files, test_filename_list=args.test_files,
                  input_pkl_filename=args.input_pkl_filename, output_pkl_filename=args.output_pkl_filename, csv_filename=args.csv_filename)
-    # wav -> csv
-    eng.wav2csv()
+    ###################
+    ###  wav -> csv ###
+    ###################
+    # eng.wav2csv()
 
-    # fitting
+    ###########
+    ### fit ###
+    ###########
     # eng.fit()
+
+    ###############
+    ### predict ###
+    ###############
+    # pkl_filename = 'ExtraTreesClassifier_ClusterCentroids_2021-11-04_no0.sav'
+    # # [raspi]立った状態
+    # test_set_trial = ['trial1', 'trial2', 'trial3']
+    # eng.predict(test_set_trial=test_set_trial, test_filename_list=[
+    #             '2021-11-26_raspi_16000Hz_w1_N2^12_overlap80.csv'], input_pkl_filename=pkl_filename)
+
+    # # [raspi]座った状態
+    # print('------')
+    # test_set_trial = ['trial4', 'trial5', 'trial6']
+    # eng.predict(test_set_trial=test_set_trial, test_filename_list=[
+    #             '2021-11-26_raspi_16000Hz_w1_N2^12_overlap80.csv'], input_pkl_filename=pkl_filename)
+
+    # # [mac]立った状態
+    # print('------')
+    # test_set_trial = ['trial1', 'trial2', 'trial3']
+    # eng.predict(test_set_trial=test_set_trial, test_filename_list=[
+    #             '2021-11-29_mac_48000Hz_w1_N2^12_overlap80.csv'], input_pkl_filename=pkl_filename)
+
+    # # [mac]座った状態
+    # print('------')
+    # test_set_trial = ['trial4', 'trial5', 'trial6']
+    # eng.predict(test_set_trial=test_set_trial, test_filename_list=[
+    #             '2021-11-29_mac_48000Hz_w1_N2^12_overlap80.csv'], input_pkl_filename=pkl_filename)
+
+    ###################
+    ### fit_predict ###
+    ###################
+    eng.fit_predict(test_filename_list=['2021-11-26_raspi_16000Hz_w1_N2^12_overlap80.csv'],
+                    test_set_trial=['trial1', 'trial2', 'trial3'], input_pkl_filename='')
