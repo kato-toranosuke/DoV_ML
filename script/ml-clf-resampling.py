@@ -45,10 +45,10 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.M
     # train_set = df.query('session_id == "trial1"', engine='numexpr')
     # test_set = df.query('session_id == "trial2"', engine='numexpr')
 
-    train_set_trial = ['trial1', 'trial2']
+    train_set_trial = ['trial1']
     train_set = df[df['session_id'].isin(train_set_trial)]
 
-    test_set_trial = ['trial3']
+    test_set_trial = ['trial2', 'trial3']
     test_set = df[df['session_id'].isin(test_set_trial)]
 
     print("データ読み込み完了")
@@ -147,7 +147,7 @@ if __name__ == '__main__':
 
         # 定数の設定（実験データで学習する場合）
         consts = load_constants.ML_Consts(
-            param_grid=param_grid, csv_path='../out/csv/experiment')
+            param_grid=param_grid, csv_path='../out/csv/experiment', ncv=8)
 
         estimator = ExtraTreesClassifier()
         resampler = None
