@@ -182,3 +182,9 @@ dmypy.json
 cython_debug/
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,python,jupyternotebooks
+
+# filesize over 100MB
+out/ml_model_result/ExtraTreesClassifier_2021-10-31_no1/ExtraTreesClassifier_2021-10-31_no1.pkl
+out/ml_model_result/ExtraTreesClassifier_2021-11-01_no1/ExtraTreesClassifier_2021-11-01_no1.pkl
+out/ml_model_result/ExtraTreesClassifier_NoResampler_2021-11-27_no0/ExtraTreesClassifier_NoResampler_2021-11-27_no0.pkl
+out/ml_model_fitting_result/ExtraTreesClassifier_ClusterCentroids_2021-11-04_no0.sav
