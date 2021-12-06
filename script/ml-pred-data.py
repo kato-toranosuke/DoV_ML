@@ -19,28 +19,38 @@ from mylib import record_model_data as rec
 
 class MlPred():
     def __init__(self, train_filename_list: List = None, test_filename_list: List = None, input_pkl_filename: str = None, output_pkl_filename: str = None, csv_filename: str = None) -> None:
-        self.consts = Exp_Consts(dataset_path='../../experiment_dataset/2021-11-29_mac',
+        self.consts = Exp_Consts(dataset_path='../../experiment_dataset/2021-12-01_gym_mac',
                                  train_csv_path='../out/csv',
                                  test_csv_path='../out/csv/experiment',
                                  input_pkl_path='../out/ml_model_result',
                                  output_pkl_path='../out/ml_model_fitting_result',
                                  output_path='../out/experiment_result')
-        # self.consts = Exp_Consts(dataset_path='../../experiment_dataset/2021-11-26',
-        #                          train_csv_path='../out/csv',
-        #                          test_csv_path='../out/csv/experiment',
-        #                          input_pkl_path='../out/ml_model_result',
-        #                          output_pkl_path='../out/ml_model_fitting_result',
-        #                          output_path='../out/experiment_result')
         self.train_filename_list = train_filename_list
         self.test_filename_list = test_filename_list
         self.input_pkl_filename = input_pkl_filename
         self.output_pkl_filename = output_pkl_filename
         self.csv_filename = csv_filename
 
-    def wav2csv(self):
+    def wav2csv(self, csv_filename=None, dataset_path=None, test_csv_path=None, w=1, N=2**12, overlap=80):
+        '''
+        Parameters
+        ----------
+        csv_filename: str
+            出力するCSVファイルの名前
+        dataset_path: str
+            読み込むwavファイルのディレクトリパス
+        test_csv_path: str
+            CSVの出力先ディレクトリ
+        '''
+        if csv_filename == None:
+            csv_filename = self.csv_filename
+        if dataset_path == None:
+            dataset_path = self.consts.DATASET_PATH
+        if test_csv_path == None:
+            test_csv_path = self.consts.TEST_CSV_PATH
+
         # wav -> csv
-        createWav2Csv(self.csv_filename, self.consts.DATASET_PATH,
-                      self.consts.TEST_CSV_PATH, w=1, N=2**12, overlap=80)
+        createWav2Csv(csv_filename, dataset_path, test_csv_path, w, N, overlap)
 
     def fit(self, train_filename_list: List = None, train_csv_path: str = None, train_set_trial: List = None, input_pkl_filename: str = None, output_pkl_filename: str = None):
         # [training data] csv -> DataFrame
@@ -246,7 +256,7 @@ if __name__ == '__main__':
     ###################
     ###  wav -> csv ###
     ###################
-    # eng.wav2csv()
+    eng.wav2csv()
 
     ###########
     ### fit ###
@@ -283,5 +293,5 @@ if __name__ == '__main__':
     ###################
     ### fit_predict ###
     ###################
-    eng.fit_predict(test_filename_list=['2021-11-26_raspi_16000Hz_w1_N2^12_overlap80.csv'],
-                    test_set_trial=['trial1', 'trial2', 'trial3'], input_pkl_filename='')
+    # eng.fit_predict(test_filename_list=['2021-11-26_raspi_16000Hz_w1_N2^12_overlap80.csv'],
+    #                 test_set_trial=['trial1', 'trial2', 'trial3'], input_pkl_filename='')
