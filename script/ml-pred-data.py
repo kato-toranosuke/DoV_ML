@@ -53,6 +53,23 @@ class MlPred():
         createWav2Csv(csv_filename, dataset_path, test_csv_path, w, N, overlap)
 
     def fit(self, train_filename_list: List = None, train_csv_path: str = None, train_set_trial: List = None, input_pkl_filename: str = None, output_pkl_filename: str = None):
+        '''
+        hyper-parameters tuning済みのモデルを入力し、fittingさせたモデルを出力。
+
+        Parameters
+        ----------
+        train_filename_list: array-like, default None
+            fit時に使用するデータが保存されているCSV
+        train_csv_path: str, default None
+            fit時に使用するCSVが格納されているディレクトリへのパス
+        train_set_trial: array-like, default None
+            使用するデータのsession番号のリスト
+        input_pkl_filename: str, default None
+            hyper-parameters tuning済みのモデルが保存されているpklファイルの名前
+        output_pkl_filename: str, default None
+            fit済みのモデルを保存するpklファイルの名前
+        '''
+
         # [training data] csv -> DataFrame
         if train_filename_list == None:
             train_filename_list = self.train_filename_list
@@ -91,6 +108,21 @@ class MlPred():
         print(f'pklへの出力: {output_pkl_filepath}')
 
     def fit_predict(self, test_filename_list: List = None, test_csv_path: str = None, test_set_trial: List = None, input_pkl_filename: str = None):
+        '''
+        hyper-parameters tuning済みのモデルを入力し、cross validationした結果を出力。
+
+        Parameters
+        ----------
+        test_filename_list: array-like, default None
+            cross validation時に使用するデータが保存されているCSVのリスト
+        test_csv_path: str, default None
+            cross validation時に使用するCSVが格納されているディレクトリへのパス
+        test_set_trial: array-like, default None
+            使用するデータのsession番号のリスト
+        input_pkl_filename: str, default None
+            hyper-parameters tuning済みのモデルが保存されているpklファイルの名前
+        '''
+
         # [test data] csv -> DataFrame
         if test_filename_list == None:
             test_filename_list = self.test_filename_list
@@ -139,6 +171,21 @@ class MlPred():
         record.write()
 
     def predict(self, test_filename_list: List = None, test_csv_path: str = None, test_set_trial: List = None, input_pkl_filename: str = None):
+        '''
+        fit済みのモデルを入力し、評価結果を出力する。
+
+        Parameters
+        ----------
+        test_filename_list: array-like, default None
+            predict時に使用するデータが保存されているCSVのリスト
+        test_csv_path: str, default None
+            predict時に使用するCSVが格納されているディレクトリへのパス
+        test_set_trial: array-like, default None
+            使用するデータのsession番号のリスト
+        input_pkl_filename: str, default None
+            hyper-parameters tuning済みのモデルが保存されているpklファイルの名前
+        '''
+
         # [test data] csv -> DataFrame
         if test_filename_list == None:
             test_filename_list = self.test_filename_list
