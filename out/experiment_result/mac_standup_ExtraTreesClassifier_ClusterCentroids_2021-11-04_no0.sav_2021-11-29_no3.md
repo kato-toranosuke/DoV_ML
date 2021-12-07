@@ -23,7 +23,9 @@
 - 2021-11-29_mac_48000Hz_w1_N2^12_overlap80.csv
 
 ## Pkl File
-../out/ml_model_fitting_result/ExtraTreesClassifier_ClusterCentroids_2021-11-04_no0.sav## Evaluation
+../out/ml_model_fitting_result/ExtraTreesClassifier_ClusterCentroids_2021-11-04_no0.sav
+
+## Evaluation
 - accuracy score: 0.4861111111111111
 - balanced accuracy score: 0.4925925925925926
 - f1 score: 0.4307692307692308

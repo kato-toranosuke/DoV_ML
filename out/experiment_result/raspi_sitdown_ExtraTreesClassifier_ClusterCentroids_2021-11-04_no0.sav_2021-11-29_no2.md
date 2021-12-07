@@ -23,7 +23,9 @@
 - 2021-11-26_raspi_16000Hz_w1_N2^12_overlap80.csv
 
 ## Pkl File
-../out/ml_model_fitting_result/ExtraTreesClassifier_ClusterCentroids_2021-11-04_no0.sav## Evaluation
+../out/ml_model_fitting_result/ExtraTreesClassifier_ClusterCentroids_2021-11-04_no0.sav
+
+## Evaluation
 - accuracy score: 0.4647887323943662
 - balanced accuracy score: 0.5538720538720538
 - f1 score: 0.5681818181818182
