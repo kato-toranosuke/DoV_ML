@@ -44,12 +44,8 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.M
     # 訓練データとテストデータを分ける(式を評価するengineとしてnumexprを使用することで、処理の高速化を狙う。)
     # train_set = df.query('session_id == "trial1"', engine='numexpr')
     # test_set = df.query('session_id == "trial2"', engine='numexpr')
-
-    train_set_trial = ['trial1']
-    train_set = df[df['session_id'].isin(train_set_trial)]
-
-    test_set_trial = ['trial2', 'trial3']
-    test_set = df[df['session_id'].isin(test_set_trial)]
+    train_set = df[df['session_id'].isin(consts.TRAIN_SET_SESSION)]
+    test_set = df[df['session_id'].isin(consts.TEST_SET_SESSION)]
 
     print("データ読み込み完了")
     #########################

@@ -42,11 +42,8 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.M
     # CSVを読み込む
     df = load_csv.CsvToDf(csv_filename_list, consts.CSV_PATH)
     # 訓練データとテストデータを分ける(式を評価するengineとしてnumexprを使用することで、処理の高速化を狙う。)
-    train_set_trial = ['trial1']
-    train_set = df[df['session_id'].isin(train_set_trial)]
-
-    test_set_trial = ['trial2', 'trial3']
-    test_set = df[df['session_id'].isin(test_set_trial)]
+    train_set = df[df['session_id'].isin(consts.TRAIN_SET_SESSION)]
+    test_set = df[df['session_id'].isin(consts.TEST_SET_SESSION)]
 
     print("データ読み込み完了")
     #########################
@@ -118,9 +115,9 @@ if __name__ == '__main__':
         # 定数の設定
         # 探索パラメータ
         param_grid = [
-            {'est__n_estimators': range(100, 1600, 100), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+            {'est__n_estimators': [100, 500, 1000], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
                 'sqrt', 'log2', None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]},
-            {'est__n_estimators': range(100, 1600, 100), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+            {'est__n_estimators': [100, 500, 1000], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
                 'sqrt', 'log2', None], 'est__bootstrap': [True], 'est__oob_score': [True, False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]}
         ]
         # param_grid = [
@@ -133,7 +130,7 @@ if __name__ == '__main__':
                                      'diff_auc', 'srmr', 'gp_max_val_std', 'gp_max_val_range', 'gp_max_val_mean', 'gp_max_ix_std', 'gp_max_ix_range', 'gp_max_ix_mean', 'gp_auc_std', 'gp_auc_range', 'gp_auc_mean', 'tdoa_std', 'tdoa_range', 'tdoa_mean']
 
         consts = load_constants.ML_Consts(
-            param_grid=param_grid, facing_dov_angles=[0])
+            param_grid=param_grid, facing_dov_angles=[0, 45, 315], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1'], test_set_session=['trial2', 'trial3'])
 
         # # trial-rf-0
         # estimator = RandomForestClassifier()
@@ -160,30 +157,30 @@ if __name__ == '__main__':
         # resampler = SMOTE(random_state=42, n_jobs=-1)
         # main(csv_list, estimator, resampler, consts)
 
-        # trial-exf-0
+        # [trial-exf-0] ExtraTreesClassifier / None
         estimator = ExtraTreesClassifier()
         resampler = None
         main(csv_list, estimator, resampler, consts)
 
-        # trial-exf-1
-        estimator = ExtraTreesClassifier()
-        resampler = ClusterCentroids(random_state=42)
-        main(csv_list, estimator, resampler, consts)
+        # # trial-exf-1
+        # estimator = ExtraTreesClassifier()
+        # resampler = ClusterCentroids(random_state=42)
+        # main(csv_list, estimator, resampler, consts)
 
-        # trial-exf-2
-        estimator = ExtraTreesClassifier()
-        resampler = RandomUnderSampler(random_state=42)
-        main(csv_list, estimator, resampler, consts)
+        # # trial-exf-2
+        # estimator = ExtraTreesClassifier()
+        # resampler = RandomUnderSampler(random_state=42)
+        # main(csv_list, estimator, resampler, consts)
 
-        # trial-exf-3
-        estimator = ExtraTreesClassifier()
-        resampler = RandomOverSampler(random_state=42)
-        main(csv_list, estimator, resampler, consts)
+        # # trial-exf-3
+        # estimator = ExtraTreesClassifier()
+        # resampler = RandomOverSampler(random_state=42)
+        # main(csv_list, estimator, resampler, consts)
 
-        # trial-exf-4
-        estimator = ExtraTreesClassifier()
-        resampler = SMOTE(random_state=42, n_jobs=-1)
-        main(csv_list, estimator, resampler, consts)
+        # # trial-exf-4
+        # estimator = ExtraTreesClassifier()
+        # resampler = SMOTE(random_state=42, n_jobs=-1)
+        # main(csv_list, estimator, resampler, consts)
 
     else:
         print("You need to specify the CSV file to be loaded.", file=sys.stderr)
