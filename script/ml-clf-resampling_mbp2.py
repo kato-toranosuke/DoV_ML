@@ -106,8 +106,6 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.M
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
-        filename = sys.argv[1]
-
         csv_list = []
         for i in range(1, len(sys.argv)):
             csv_list.append(sys.argv[i])
@@ -130,7 +128,7 @@ if __name__ == '__main__':
                                      'diff_auc', 'srmr', 'gp_max_val_std', 'gp_max_val_range', 'gp_max_val_mean', 'gp_max_ix_std', 'gp_max_ix_range', 'gp_max_ix_mean', 'gp_auc_std', 'gp_auc_range', 'gp_auc_mean', 'tdoa_std', 'tdoa_range', 'tdoa_mean']
 
         consts = load_constants.ML_Consts(
-            param_grid=param_grid, facing_dov_angles=[0, 45, 315], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1'], test_set_session=['trial2', 'trial3'])
+            param_grid=param_grid, facing_dov_angles=[0, 45, 315], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial4'], test_set_session=['trial5', 'trial6'], output_path='../out/experiment_result')
 
         # # trial-rf-0
         # estimator = RandomForestClassifier()

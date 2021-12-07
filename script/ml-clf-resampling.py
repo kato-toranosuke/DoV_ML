@@ -108,8 +108,6 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.M
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
-        filename = sys.argv[1]
-
         csv_list = []
         for i in range(1, len(sys.argv)):
             csv_list.append(sys.argv[i])
@@ -143,7 +141,7 @@ if __name__ == '__main__':
 
         # 定数の設定（実験データで学習する場合）
         consts = load_constants.ML_Consts(
-            param_grid=param_grid, csv_path='../out/csv/experiment', ncv=8)
+            param_grid=param_grid, facing_dov_angles=[0, 45, 315], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial4'], test_set_session=['trial5', 'trial6'], output_path='../out/experiment_result')
 
         estimator = ExtraTreesClassifier()
         resampler = None
