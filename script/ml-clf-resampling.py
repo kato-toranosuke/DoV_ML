@@ -115,9 +115,9 @@ if __name__ == '__main__':
         # 定数の設定
         # 探索パラメータ
         param_grid = [
-            {'est__n_estimators': [100, 500, 1000], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+            {'est__n_estimators': [50, 100, 150, 200, 300], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
                 'sqrt', 'log2', None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]},
-            {'est__n_estimators': [100, 500, 1000], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+            {'est__n_estimators': [50, 100, 150, 200, 300], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
                 'sqrt', 'log2', None], 'est__bootstrap': [True], 'est__oob_score': [True, False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]}
         ]
         # param_grid = [
@@ -132,25 +132,77 @@ if __name__ == '__main__':
         # ]
 
         # 特徴量(最大値・最小値を除外)
-        feature_attrbs_no_max_min = ['low_power', 'high_power', 'hlbr', 'coe1[0]', 'coe1[1]', 'coe3[0]', 'coe3[1]', 'coe3[2]', 'coe3[3]', 'ratio_max_to_10ms_ave_peaks', 'ratio_max_to_9th_ave_peaks', 'ac_std', 'ac_auc', 'diff_std',
-                                     'diff_auc', 'srmr', 'gp_max_val_std', 'gp_max_val_range', 'gp_max_val_mean', 'gp_max_ix_std', 'gp_max_ix_range', 'gp_max_ix_mean', 'gp_auc_std', 'gp_auc_range', 'gp_auc_mean', 'tdoa_std', 'tdoa_range', 'tdoa_mean']
-
+        # feature_attrbs_no_max_min = ['low_power', 'high_power', 'hlbr', 'coe1[0]', 'coe1[1]', 'coe3[0]', 'coe3[1]', 'coe3[2]', 'coe3[3]', 'ratio_max_to_10ms_ave_peaks', 'ratio_max_to_9th_ave_peaks', 'ac_std', 'ac_auc', 'diff_std',
+        #                              'diff_auc', 'srmr', 'gp_max_val_std', 'gp_max_val_range', 'gp_max_val_mean', 'gp_max_ix_std', 'gp_max_ix_range', 'gp_max_ix_mean', 'gp_auc_std', 'gp_auc_range', 'gp_auc_mean', 'tdoa_std', 'tdoa_range', 'tdoa_mean']
         # 定数の設定（最大値・最小値を無視する場合）
         # consts = load_constants.ML_Consts(
         #     param_grid=param_grid, feature_attrbs=feature_attrbs_no_max_min)
 
-        # 定数の設定（実験データで学習する場合）
-        consts = load_constants.ML_Consts(
-            param_grid=param_grid, facing_dov_angles=[0, 45, 315], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial4'], test_set_session=['trial5', 'trial6'], output_path='../out/experiment_result')
+        ####################################
+        ### (0, 45, 315)をfacingとする場合 ###
+        ####################################
 
+        # train-> trial1 / test-> trial2,3
         estimator = ExtraTreesClassifier()
         resampler = None
+        # 定数の設定（実験データで学習する場合）
+        consts = load_constants.ML_Consts(
+            param_grid=param_grid, facing_dov_angles=[0, 45, 315], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1'], test_set_session=['trial2', 'trial3'], output_path='../out/experiment_result')
         main(csv_list, estimator, resampler, consts)
 
-        # # trial-rf-0
-        # estimator = RandomForestClassifier()
+        # # train-> trial2 / test-> trial1,3
+        # estimator = ExtraTreesClassifier()
         # resampler = None
+        # # 定数の設定（実験データで学習する場合）
+        # consts = load_constants.ML_Consts(
+        #     param_grid=param_grid, facing_dov_angles=[0, 45, 315], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial2'], test_set_session=['trial1', 'trial3'], output_path='../out/experiment_result')
         # main(csv_list, estimator, resampler, consts)
+
+        # # train-> trial3 / test-> trial1,2
+        # estimator = ExtraTreesClassifier()
+        # resampler = None
+        # # 定数の設定（実験データで学習する場合）
+        # consts = load_constants.ML_Consts(
+        #     param_grid=param_grid, facing_dov_angles=[0, 45, 315], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial3'], test_set_session=['trial1', 'trial2'], output_path='../out/experiment_result')
+        # main(csv_list, estimator, resampler, consts)
+
+        #############################
+        ### 0のみをfacingとする場合 ###
+        #############################
+        # No resampler
+        estimator = ExtraTreesClassifier()
+        resampler = None
+        consts = load_constants.ML_Consts(
+            param_grid=param_grid, facing_dov_angles=[0], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1'], test_set_session=['trial2', 'trial3'], output_path='../out/experiment_result')
+        main(csv_list, estimator, resampler, consts)
+
+        # ClusterCentroids
+        estimator = ExtraTreesClassifier()
+        resampler = ClusterCentroids(random_state=42)
+        consts = load_constants.ML_Consts(
+            param_grid=param_grid, facing_dov_angles=[0], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1'], test_set_session=['trial2', 'trial3'], output_path='../out/experiment_result')
+        main(csv_list, estimator, resampler, consts)
+
+        # RandomUnderSampler
+        estimator = ExtraTreesClassifier()
+        resampler = RandomUnderSampler(random_state=42)
+        consts = load_constants.ML_Consts(
+            param_grid=param_grid, facing_dov_angles=[0], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1'], test_set_session=['trial2', 'trial3'], output_path='../out/experiment_result')
+        main(csv_list, estimator, resampler, consts)
+
+        # RandomOverSampler
+        estimator = ExtraTreesClassifier()
+        resampler = RandomOverSampler(random_state=42)
+        consts = load_constants.ML_Consts(
+            param_grid=param_grid, facing_dov_angles=[0], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1'], test_set_session=['trial2', 'trial3'], output_path='../out/experiment_result')
+        main(csv_list, estimator, resampler, consts)
+
+        # SMOTE
+        estimator = ExtraTreesClassifier()
+        resampler = SMOTE(random_state=42, n_jobs=-1)
+        consts = load_constants.ML_Consts(
+            param_grid=param_grid, facing_dov_angles=[0], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1'], test_set_session=['trial2', 'trial3'], output_path='../out/experiment_result')
+        main(csv_list, estimator, resampler, consts)
 
         # # trial-rf-1
         # estimator = RandomForestClassifier()
