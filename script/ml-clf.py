@@ -102,55 +102,10 @@ def main(csv_list: List, consts: load_constants.ML_Consts = None):
     ################
     # 実行中のスクリプトの名前を取得
     fname = os.path.splitext(os.path.basename(__file__))[0]
-    dir_name = rec.GetDirname(fname, consts.OUTPUT_PATH)
-    output_dir_path = consts.OUTPUT_PATH + dir_name
-    # 出力するデータを格納するディレクトリを作成
-    os.mkdir(output_dir_path)
 
-    # モデルの保存
-    pkl_path = output_dir_path + "/" + dir_name + ".pkl"
-    joblib.dump(best_estimator, pkl_path)
-
-    # 結果ファイル
-    result_file_path = output_dir_path + "/" + dir_name + ".md"
-    with open(result_file_path, 'w') as f:
-        output_str = '# ' + dir_name + '\n'
-        # 定数の記録
-        consts_str = "## Constants\n" + rec.GetInstanceValStr(consts)
-        # 読み込んだCSVファイル
-        csv_str = '## Loaded CSV\n' + rec.GetListStr(csv_list)
-        # 推定器
-        estimator_str = '## Estimator\n'
-        estimator_str += '### Type\n' + estimator.__class__.__name__ + '\n'
-        # Grid Search CV
-        estimator_str += '### Arguments for hyperparameter search\n'
-        estimator_str += '- estimator = ' + estimator.__class__.__name__ + '\n'
-        estimator_str += '- param_grid = \n' + \
-            rec.GetListStr(consts.PARAM_GRID, level=1)
-        estimator_str += '- scoring = ' + str(consts.SCORING) + '\n'
-        estimator_str += '- refit = ' + str(consts.REFIT_SCORING) + '\n'
-        estimator_str += '- cv = ' + str(consts.NCV) + '\n'
-        estimator_str += '\n'
-        # Best Estimator(ベストハイパラ、特徴量の重要度)
-        estimator_str += '### Parameters of the best estimator\n'
-        estimator_str += '#### The best hyper-parameters\n'
-        estimator_str += rec.GetDictStr(best_estimator.__dict__, level=0)
-        estimator_str += '#### Importance of features\n'
-        feature_importance = rec.GetFeaturesImportance(
-            best_estimator, consts.FEATURE_ATTRBS)
-        estimator_str += rec.GetDictStr(feature_importance, level=0)
-
-        # 評価
-        evaluation_str = '## Evaluation\n'
-        evaluation_str += rec.GetEvaluationScore(scores, consts.SCORING)
-        evaluation_str += '### Confusion Matrix\n'
-        evaluation_str += (str(conf_mat) + '\n')
-
-        output_str += (consts_str + csv_str + estimator_str + evaluation_str)
-
-        f.writelines(output_str)
-
-    print(f'Complete!\nResult file is {result_file_path}')
+    record_md = rec.RecModelDataToMarkdown(fname=fname, consts=consts, csv_list=csv_list,
+                                           estimator=estimator, best_estimator=best_estimator, scores=scores, conf_mat=conf_mat)
+    record_md.write()
 
 
 if __name__ == '__main__':

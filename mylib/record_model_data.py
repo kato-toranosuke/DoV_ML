@@ -20,7 +20,7 @@ class RecModelDataToMarkdown():
         self.scores = scores
         self.conf_mat = conf_mat
 
-    def RecModelDataToMarkdown(self):
+    def write(self):
         # 実行中のスクリプトの名前を取得
         dir_name = self.GetDirname(self.fname, self.consts.OUTPUT_PATH)
         output_dir_path = self.consts.OUTPUT_PATH + '/' + dir_name
