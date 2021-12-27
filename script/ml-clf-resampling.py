@@ -11,6 +11,7 @@ from sklearn.model_selection import GridSearchCV
 from imblearn.pipeline import Pipeline as ImbPipeline
 from imblearn.under_sampling import RandomUnderSampler, ClusterCentroids
 from imblearn.over_sampling import RandomOverSampler, SMOTE
+from imblearn.combine import SMOTEENN, SMOTETomek
 from sklearn.pipeline import Pipeline
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -203,6 +204,8 @@ if __name__ == '__main__':
         consts = load_constants.ML_Consts(
             param_grid=param_grid, facing_dov_angles=[0], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1'], test_set_session=['trial2', 'trial3'], output_path='../out/experiment_result')
         main(csv_list, estimator, resampler, consts)
+
+        # SMOTEENN
 
         # # trial-rf-1
         # estimator = RandomForestClassifier()
