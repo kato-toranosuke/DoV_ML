@@ -41,8 +41,12 @@ def main(csv_list: List, consts: load_constants.ML_Consts = None):
     # CSVを読み込む
     df = load_csv.CsvToDf(csv_list, consts.CSV_PATH)
     # 訓練データとテストデータを分ける(式を評価するengineとしてnumexprを使用することで、処理の高速化を狙う。)
-    train_set = df.query('session_id == "trial1"', engine='numexpr')
-    test_set = df.query('session_id == "trial2"', engine='numexpr')
+    # train_set = df.query('session_id == "trial1"', engine='numexpr')
+    # test_set = df.query('session_id == "trial2"', engine='numexpr')
+    train_set = df[df['session_id'].isin(consts.TRAIN_SET_SESSION)]
+    test_set = df[df['session_id'].isin(consts.TEST_SET_SESSION)]
+
+    print('[Complete] データの読み込み')
 
     #########################
     ### データのクリーニング ###
@@ -63,6 +67,8 @@ def main(csv_list: List, consts: load_constants.ML_Consts = None):
     y_train = label_pipeline.fit_transform(train_set)
     y_test = label_pipeline.fit_transform(test_set)
 
+    print('[Complete] データのクリーニング')
+
     ###########
     ### 訓練 ###
     ###########
@@ -72,6 +78,8 @@ def main(csv_list: List, consts: load_constants.ML_Consts = None):
     hyper_params_search = GridSearchCV(estimator=estimator, param_grid=consts.PARAM_GRID, scoring=consts.SCORING,
                                        n_jobs=-1, refit=consts.REFIT_SCORING, cv=consts.NCV, return_train_score=False)
     hyper_params_search.fit(X_train, y_train)
+
+    print('[Complete] 訓練')
 
     ###########
     ### 検証 ###
@@ -86,6 +94,8 @@ def main(csv_list: List, consts: load_constants.ML_Consts = None):
     y_test_pred = cross_val_predict(
         best_estimator, X_test, y_test, cv=consts.NCV, n_jobs=-1)
     conf_mat = confusion_matrix(y_test, y_test_pred)
+
+    print('[Complete] 検証')
 
     ################
     ### 結果の出力 ###
@@ -159,7 +169,14 @@ if __name__ == '__main__':
                 'sqrt', 'log2', None], 'bootstrap': [True], 'oob_score': [True, False], 'n_jobs': [-1], 'random_state': [42], 'max_samples': [0.01, 0.5, 0.09]}
             # {'n_estimators': [100, 300, 500, 800, 1000, 1300, 1500], 'min_samples_split': [2, 5, 10], 'min_samples_leaf': [1, 5, 10], 'max_features': ['sqrt', 'log2', None], 'bootstrap': [False], 'n_jobs': [-1], 'random_state': [42], 'max_samples': [0.01, 0.5, 0.09]},
         ]
-        consts = load_constants.ML_Consts(param_grid=param_grid)
+        csv_path = '../out/csv/experiment'
+        label_attrb = ['dov_angle']
+        facing_dov_angles = [0, 45, 315]
+        ncv = 8
+        train_set_session = ['trial1']
+        test_set_session = ['trial2', 'trial3']
+        consts = load_constants.ML_Consts(param_grid=param_grid, csv_path=csv_path, label_attrb=label_attrb,
+                                          facing_dov_angles=facing_dov_angles, ncv=ncv, train_set_session=train_set_session, test_set_session=test_set_session)
 
         main(csv_list, consts=consts)
     else:

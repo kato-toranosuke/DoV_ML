@@ -289,21 +289,29 @@ class MlPred():
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--train_files', nargs='+', required=True)
-    parser.add_argument('--test_files', nargs='+', required=True)
-    parser.add_argument('--input_pkl_filename', default=None)
-    parser.add_argument('--output_pkl_filename', default=None)
-    parser.add_argument('--csv_filename', default=None)
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--train_files', nargs='+', required=True)
+    # parser.add_argument('--test_files', nargs='+', required=True)
+    # parser.add_argument('--input_pkl_filename', default=None)
+    # parser.add_argument('--output_pkl_filename', default=None)
+    # parser.add_argument('--csv_filename', default=None)
+    # args = parser.parse_args()
 
-    args = parser.parse_args()
+    # eng = MlPred(train_filename_list=args.train_files, test_filename_list=args.test_files,
+    #              input_pkl_filename=args.input_pkl_filename, output_pkl_filename=args.output_pkl_filename, csv_filename=args.csv_filename)
 
-    eng = MlPred(train_filename_list=args.train_files, test_filename_list=args.test_files,
-                 input_pkl_filename=args.input_pkl_filename, output_pkl_filename=args.output_pkl_filename, csv_filename=args.csv_filename)
+    train_filename_list = ['2021-12-01_mac_48000Hz_w1_N2^12_overlap80.csv']
+    test_filename_list = ['2021-12-27_raspi_48000Hz_w1_N2^12_overlap80.csv']
+    input_pkl_filename = None
+    output_pkl_filename = 'train_20211201_test_20211227_0-3-5m_0-45-315.pkl'
+    csv_filename = None  # wav->csvの時のcsvの名前
+    eng = MlPred(train_filename_list, test_filename_list,
+                 input_pkl_filename, output_pkl_filename, csv_filename)
+
     ###################
     ###  wav -> csv ###
     ###################
-    eng.wav2csv()
+    # eng.wav2csv()
 
     ###########
     ### fit ###
