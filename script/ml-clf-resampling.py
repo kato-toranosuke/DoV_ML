@@ -120,6 +120,42 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.M
         consts, csv_list, best_resampler, best_estimator, scores, conf_mat)
     record.write()
 
+def ml_main(csv_list, consts):
+    # No resampler
+    estimator = ExtraTreesClassifier()
+    resampler = None
+    main(csv_list, estimator, resampler, consts)
+
+    # ClusterCentroids
+    estimator = ExtraTreesClassifier()
+    resampler = ClusterCentroids(random_state=42)
+    main(csv_list, estimator, resampler, consts)
+
+    # RandomUnderSampler
+    estimator = ExtraTreesClassifier()
+    resampler = RandomUnderSampler(random_state=42)
+    main(csv_list, estimator, resampler, consts)
+
+    # RandomOverSampler
+    estimator = ExtraTreesClassifier()
+    resampler = RandomOverSampler(random_state=42)
+    main(csv_list, estimator, resampler, consts)
+
+    # SMOTE
+    estimator = ExtraTreesClassifier()
+    resampler = SMOTE(random_state=42, n_jobs=-1)
+    main(csv_list, estimator, resampler, consts)
+
+    # SMOTEENN
+    estimator = ExtraTreesClassifier()
+    resampler = SMOTEENN(random_state=42, n_jobs=-1)
+    main(csv_list, estimator, resampler, consts)
+
+    # SMOTETomek
+    estimator = ExtraTreesClassifier()
+    resampler = SMOTETomek(random_state=42, n_jobs=-1)
+    main(csv_list, estimator, resampler, consts)
+
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
@@ -172,91 +208,33 @@ if __name__ == '__main__':
         #     param_grid=param_grid, facing_dov_angles=[0, 45, 315], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial3'], test_set_session=['trial1', 'trial2'], output_path='../out/experiment_result')
         # main(csv_list, estimator, resampler, consts)
 
-        #############################
-        ### 0のみをfacingとする場合 ###
-        #############################
-        consts = load_constants.ML_Consts(param_grid=param_grid, label_attrb=['facing'], facing_dov_angles=[1], csv_path='../out/csv/experiment', ncv=8, train_set_session=[
-                                          'trial1', 'trial2'], test_set_session=['trial3', 'trial4', 'trial5'], output_path='../out/experiment_result/2021-12-27-5m')
+        label_attrbs = [['facing'], ['facing2']]
+        facing_dov_angles = [[1], [1, 2]]
+        angles = ['0', '45']
 
-        # No resampler
-        estimator = ExtraTreesClassifier()
-        resampler = None
-        main(csv_list, estimator, resampler, consts)
+        agc_statuses = [['AGC'], ['NoAGC']]
 
-        # ClusterCentroids
-        estimator = ExtraTreesClassifier()
-        resampler = ClusterCentroids(random_state=42)
-        main(csv_list, estimator, resampler, consts)
+        distances = [[1, 3, 5], [1], [3], [5], [1, 3]]
+        distances_name = ['under5m', '1m', '3m', '5m', 'under3m']
 
-        # RandomUnderSampler
-        estimator = ExtraTreesClassifier()
-        resampler = RandomUnderSampler(random_state=42)
-        main(csv_list, estimator, resampler, consts)
+        tmp = 0
+        for i, label_attrb in enumerate(label_attrbs):
+            for agc_status in agc_statuses:
+                for j, distance in enumerate(distances):
+                    # 最初だけスキップ
+                    if tmp == 0:
+                        tmp += 1
+                        continue
 
-        # RandomOverSampler
-        estimator = ExtraTreesClassifier()
-        resampler = RandomOverSampler(random_state=42)
-        main(csv_list, estimator, resampler, consts)
+                    output_path = '../out/experiment_result/data_of_2021-12-27/' + \
+                        agc_status[0] + '-' + angles[i] + \
+                        'angle-' + distances_name[j]
+                    os.makedirs(output_path, exist_ok=True)
 
-        # SMOTE
-        estimator = ExtraTreesClassifier()
-        resampler = SMOTE(random_state=42, n_jobs=-1)
-        main(csv_list, estimator, resampler, consts)
+                    consts = load_constants.ML_Consts(param_grid=param_grid, label_attrb=label_attrb, facing_dov_angles=facing_dov_angles[i], csv_path='../out/csv/experiment', ncv=8, train_set_session=[
+                        'trial1', 'trial2'], test_set_session=['trial3', 'trial4', 'trial5'], output_path=output_path, distance=distance, agc_status=agc_status)
 
-        # SMOTEENN
-        estimator = ExtraTreesClassifier()
-        resampler = SMOTEENN(random_state=42, n_jobs=-1)
-        main(csv_list, estimator, resampler, consts)
-
-        # SMOTETomek
-        estimator = ExtraTreesClassifier()
-        resampler = SMOTETomek(random_state=42, n_jobs=-1)
-        main(csv_list, estimator, resampler, consts)
-
-        # # trial-rf-1
-        # estimator = RandomForestClassifier()
-        # resampler = ClusterCentroids(random_state=42)
-        # main(csv_list, estimator, resampler, consts)
-
-        # # trial-rf-2
-        # estimator = RandomForestClassifier()
-        # resampler = RandomUnderSampler(random_state=42)
-        # main(csv_list, estimator, resampler, consts)
-
-        # # trial-rf-3
-        # estimator = RandomForestClassifier()
-        # resampler = RandomOverSampler(random_state=42)
-        # main(csv_list, estimator, resampler, consts)
-
-        # # trial-rf-4
-        # estimator = RandomForestClassifier()
-        # resampler = SMOTE(random_state=42, n_jobs=-1)
-        # main(csv_list, estimator, resampler, consts)
-
-        # # trial-exf-0
-        # estimator = ExtraTreesClassifier()
-        # resampler = None
-        # main(csv_list, estimator, resampler, consts)
-
-        # # trial-exf-1
-        # estimator = ExtraTreesClassifier()
-        # resampler = ClusterCentroids(random_state=42)
-        # main(csv_list, estimator, resampler, consts)
-
-        # # trial-exf-2
-        # estimator = ExtraTreesClassifier()
-        # resampler = RandomUnderSampler(random_state=42)
-        # main(csv_list, estimator, resampler, consts)
-
-        # # trial-exf-3
-        # estimator = ExtraTreesClassifier()
-        # resampler = RandomOverSampler(random_state=42)
-        # main(csv_list, estimator, resampler, consts)
-
-        # # trial-exf-4
-        # estimator = ExtraTreesClassifier()
-        # resampler = SMOTE(random_state=42, n_jobs=-1)
-        # main(csv_list, estimator, resampler, consts)
+                    ml_main(csv_list, consts)
 
     else:
         print("You need to specify the CSV file to be loaded.", file=sys.stderr)
