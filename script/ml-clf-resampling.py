@@ -13,6 +13,7 @@ from imblearn.under_sampling import RandomUnderSampler, ClusterCentroids
 from imblearn.over_sampling import RandomOverSampler, SMOTE
 from imblearn.combine import SMOTEENN, SMOTETomek
 from sklearn.pipeline import Pipeline
+import pprint
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from mylib import load_csv
@@ -45,10 +46,15 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.M
     # 訓練データとテストデータを分ける(式を評価するengineとしてnumexprを使用することで、処理の高速化を狙う。)
     # train_set = df.query('session_id == "trial1"', engine='numexpr')
     # test_set = df.query('session_id == "trial2"', engine='numexpr')
-    train_set = df[df['session_id'].isin(consts.TRAIN_SET_SESSION)]
-    test_set = df[df['session_id'].isin(consts.TEST_SET_SESSION)]
+    # train_set = df[df['session_id'].isin(consts.TRAIN_SET_SESSION)]
+    # test_set = df[df['session_id'].isin(consts.TEST_SET_SESSION)]
+    train_set = df[(df['session_id'].isin(consts.TRAIN_SET_SESSION)) & (
+        df['agc_status'] == 'AGC')]
+    test_set = df[(df['session_id'].isin(consts.TEST_SET_SESSION))
+                  & (df['agc_status'] == 'AGC')]
 
     print("データ読み込み完了")
+
     #########################
     ### データのクリーニング ###
     #########################
@@ -61,6 +67,7 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.M
     y_test = pl.pick_label_pipeline.fit_transform(test_set)
 
     print('データのクリーニング完了')
+
     ###########
     ### 訓練 ###
     ###########
@@ -88,13 +95,20 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.M
 
     best_estimator = search.best_estimator_['est']
 
+    # パイプライン
+    if resampler != None:
+        test_pipeline = ImbPipeline(
+            steps=[('resmp', best_resampler), ('est', best_estimator)])
+    else:
+        test_pipeline = Pipeline(steps=[('est', best_estimator)])
+
     # Accuracy, Balanced Accuracy, F1 Score
-    scores = cross_validate(best_estimator, X_test, y_test,
+    scores = cross_validate(test_pipeline, X_test, y_test,
                             scoring=consts.SCORING, cv=consts.NCV, n_jobs=-1)
 
     # Confusion Matrix
     y_test_pred = cross_val_predict(
-        best_estimator, X_test, y_test, cv=consts.NCV, n_jobs=-1)
+        test_pipeline, X_test, y_test, cv=consts.NCV, n_jobs=-1)
     conf_mat = confusion_matrix(y_test, y_test_pred)
 
     print('検証完了')
@@ -142,15 +156,6 @@ if __name__ == '__main__':
         ####################################
         ### (0, 45, 315)をfacingとする場合 ###
         ####################################
-
-        # train-> trial1 / test-> trial2,3
-        estimator = ExtraTreesClassifier()
-        resampler = None
-        # 定数の設定（実験データで学習する場合）
-        consts = load_constants.ML_Consts(
-            param_grid=param_grid, facing_dov_angles=[0, 45, 315], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1'], test_set_session=['trial2', 'trial3'], output_path='../out/experiment_result')
-        main(csv_list, estimator, resampler, consts)
-
         # # train-> trial2 / test-> trial1,3
         # estimator = ExtraTreesClassifier()
         # resampler = None
@@ -170,42 +175,43 @@ if __name__ == '__main__':
         #############################
         ### 0のみをfacingとする場合 ###
         #############################
+        consts = load_constants.ML_Consts(
+            param_grid=param_grid, label_attrb=['facing'], facing_dov_angles=[1], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1', 'trial2'], test_set_session=['trial3', 'trial4', 'trial5'], output_path='../out/experiment_result')
+
         # No resampler
         estimator = ExtraTreesClassifier()
         resampler = None
-        consts = load_constants.ML_Consts(
-            param_grid=param_grid, facing_dov_angles=[0], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1'], test_set_session=['trial2', 'trial3'], output_path='../out/experiment_result')
         main(csv_list, estimator, resampler, consts)
 
         # ClusterCentroids
         estimator = ExtraTreesClassifier()
         resampler = ClusterCentroids(random_state=42)
-        consts = load_constants.ML_Consts(
-            param_grid=param_grid, facing_dov_angles=[0], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1'], test_set_session=['trial2', 'trial3'], output_path='../out/experiment_result')
         main(csv_list, estimator, resampler, consts)
 
         # RandomUnderSampler
         estimator = ExtraTreesClassifier()
         resampler = RandomUnderSampler(random_state=42)
-        consts = load_constants.ML_Consts(
-            param_grid=param_grid, facing_dov_angles=[0], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1'], test_set_session=['trial2', 'trial3'], output_path='../out/experiment_result')
         main(csv_list, estimator, resampler, consts)
 
         # RandomOverSampler
         estimator = ExtraTreesClassifier()
         resampler = RandomOverSampler(random_state=42)
-        consts = load_constants.ML_Consts(
-            param_grid=param_grid, facing_dov_angles=[0], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1'], test_set_session=['trial2', 'trial3'], output_path='../out/experiment_result')
         main(csv_list, estimator, resampler, consts)
 
         # SMOTE
         estimator = ExtraTreesClassifier()
         resampler = SMOTE(random_state=42, n_jobs=-1)
-        consts = load_constants.ML_Consts(
-            param_grid=param_grid, facing_dov_angles=[0], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1'], test_set_session=['trial2', 'trial3'], output_path='../out/experiment_result')
         main(csv_list, estimator, resampler, consts)
 
         # SMOTEENN
+        estimator = ExtraTreesClassifier()
+        resampler = SMOTEENN(random_state=42, n_jobs=-1)
+        main(csv_list, estimator, resampler, consts)
+
+        # SMOTETomek
+        estimator = ExtraTreesClassifier()
+        resampler = SMOTETomek(random_state=42, n_jobs=-1)
+        main(csv_list, estimator, resampler, consts)
 
         # # trial-rf-1
         # estimator = RandomForestClassifier()
