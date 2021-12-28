@@ -11,7 +11,9 @@ from sklearn.model_selection import GridSearchCV
 from imblearn.pipeline import Pipeline as ImbPipeline
 from imblearn.under_sampling import RandomUnderSampler, ClusterCentroids
 from imblearn.over_sampling import RandomOverSampler, SMOTE
+from imblearn.combine import SMOTEENN, SMOTETomek
 from sklearn.pipeline import Pipeline
+import pprint
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from mylib import load_csv
@@ -42,10 +44,17 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.M
     # CSVを読み込む
     df = load_csv.CsvToDf(csv_filename_list, consts.CSV_PATH)
     # 訓練データとテストデータを分ける(式を評価するengineとしてnumexprを使用することで、処理の高速化を狙う。)
-    train_set = df[df['session_id'].isin(consts.TRAIN_SET_SESSION)]
-    test_set = df[df['session_id'].isin(consts.TEST_SET_SESSION)]
+    # train_set = df.query('session_id == "trial1"', engine='numexpr')
+    # test_set = df.query('session_id == "trial2"', engine='numexpr')
+    # train_set = df[df['session_id'].isin(consts.TRAIN_SET_SESSION)]
+    # test_set = df[df['session_id'].isin(consts.TEST_SET_SESSION)]
+    train_set = df[(df['session_id'].isin(consts.TRAIN_SET_SESSION)) & (
+        df['agc_status'] == 'AGC') & (df['distance'] <= 3)]
+    test_set = df[(df['session_id'].isin(consts.TEST_SET_SESSION))
+                  & (df['agc_status'] == 'AGC') & (df['distance'] <= 3)]
 
     print("データ読み込み完了")
+
     #########################
     ### データのクリーニング ###
     #########################
@@ -58,6 +67,7 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.M
     y_test = pl.pick_label_pipeline.fit_transform(test_set)
 
     print('データのクリーニング完了')
+
     ###########
     ### 訓練 ###
     ###########
@@ -85,13 +95,20 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.M
 
     best_estimator = search.best_estimator_['est']
 
+    # パイプライン
+    if resampler != None:
+        test_pipeline = ImbPipeline(
+            steps=[('resmp', best_resampler), ('est', best_estimator)])
+    else:
+        test_pipeline = Pipeline(steps=[('est', best_estimator)])
+
     # Accuracy, Balanced Accuracy, F1 Score
-    scores = cross_validate(best_estimator, X_test, y_test,
+    scores = cross_validate(test_pipeline, X_test, y_test,
                             scoring=consts.SCORING, cv=consts.NCV, n_jobs=-1)
 
     # Confusion Matrix
     y_test_pred = cross_val_predict(
-        best_estimator, X_test, y_test, cv=consts.NCV, n_jobs=-1)
+        test_pipeline, X_test, y_test, cv=consts.NCV, n_jobs=-1)
     conf_mat = confusion_matrix(y_test, y_test_pred)
 
     print('検証完了')
@@ -113,27 +130,88 @@ if __name__ == '__main__':
         # 定数の設定
         # 探索パラメータ
         param_grid = [
-            {'est__n_estimators': [100, 500, 1000], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+            {'est__n_estimators': [50, 100, 150, 200, 300], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
                 'sqrt', 'log2', None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]},
-            {'est__n_estimators': [100, 500, 1000], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+            {'est__n_estimators': [50, 100, 150, 200, 300], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
                 'sqrt', 'log2', None], 'est__bootstrap': [True], 'est__oob_score': [True, False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]}
         ]
+        # param_grid = [
+        #     {'est__n_estimators': range(100, 1600, 100), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+        #         'sqrt', 'log2', None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]},
+        #     {'est__n_estimators': range(100, 1600, 100), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+        #         'sqrt', 'log2', None], 'est__bootstrap': [True], 'est__oob_score': [True, False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]}
+        # ]
         # param_grid = [
         #   {'est__n_estimators': range(10, 30, 10), 'est__min_samples_split': [2], 'est__min_samples_leaf': [5], 'est__max_features': [
         #       None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.5]}
         # ]
 
         # 特徴量(最大値・最小値を除外)
-        feature_attrbs_no_max_min = ['low_power', 'high_power', 'hlbr', 'coe1[0]', 'coe1[1]', 'coe3[0]', 'coe3[1]', 'coe3[2]', 'coe3[3]', 'ratio_max_to_10ms_ave_peaks', 'ratio_max_to_9th_ave_peaks', 'ac_std', 'ac_auc', 'diff_std',
-                                     'diff_auc', 'srmr', 'gp_max_val_std', 'gp_max_val_range', 'gp_max_val_mean', 'gp_max_ix_std', 'gp_max_ix_range', 'gp_max_ix_mean', 'gp_auc_std', 'gp_auc_range', 'gp_auc_mean', 'tdoa_std', 'tdoa_range', 'tdoa_mean']
+        # feature_attrbs_no_max_min = ['low_power', 'high_power', 'hlbr', 'coe1[0]', 'coe1[1]', 'coe3[0]', 'coe3[1]', 'coe3[2]', 'coe3[3]', 'ratio_max_to_10ms_ave_peaks', 'ratio_max_to_9th_ave_peaks', 'ac_std', 'ac_auc', 'diff_std',
+        #                              'diff_auc', 'srmr', 'gp_max_val_std', 'gp_max_val_range', 'gp_max_val_mean', 'gp_max_ix_std', 'gp_max_ix_range', 'gp_max_ix_mean', 'gp_auc_std', 'gp_auc_range', 'gp_auc_mean', 'tdoa_std', 'tdoa_range', 'tdoa_mean']
+        # 定数の設定（最大値・最小値を無視する場合）
+        # consts = load_constants.ML_Consts(
+        #     param_grid=param_grid, feature_attrbs=feature_attrbs_no_max_min)
 
-        consts = load_constants.ML_Consts(
-            param_grid=param_grid, facing_dov_angles=[0, 45, 315], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial4'], test_set_session=['trial5', 'trial6'], output_path='../out/experiment_result')
-
-        # # trial-rf-0
-        # estimator = RandomForestClassifier()
+        ####################################
+        ### (0, 45, 315)をfacingとする場合 ###
+        ####################################
+        # # train-> trial2 / test-> trial1,3
+        # estimator = ExtraTreesClassifier()
         # resampler = None
+        # # 定数の設定（実験データで学習する場合）
+        # consts = load_constants.ML_Consts(
+        #     param_grid=param_grid, facing_dov_angles=[0, 45, 315], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial2'], test_set_session=['trial1', 'trial3'], output_path='../out/experiment_result')
         # main(csv_list, estimator, resampler, consts)
+
+        # # train-> trial3 / test-> trial1,2
+        # estimator = ExtraTreesClassifier()
+        # resampler = None
+        # # 定数の設定（実験データで学習する場合）
+        # consts = load_constants.ML_Consts(
+        #     param_grid=param_grid, facing_dov_angles=[0, 45, 315], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial3'], test_set_session=['trial1', 'trial2'], output_path='../out/experiment_result')
+        # main(csv_list, estimator, resampler, consts)
+
+        #############################
+        ### 0のみをfacingとする場合 ###
+        #############################
+        consts = load_constants.ML_Consts(
+            param_grid=param_grid, label_attrb=['facing'], facing_dov_angles=[1], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1', 'trial2'], test_set_session=['trial3', 'trial4', 'trial5'], output_path='../out/experiment_result')
+
+        # No resampler
+        estimator = ExtraTreesClassifier()
+        resampler = None
+        main(csv_list, estimator, resampler, consts)
+
+        # ClusterCentroids
+        estimator = ExtraTreesClassifier()
+        resampler = ClusterCentroids(random_state=42)
+        main(csv_list, estimator, resampler, consts)
+
+        # RandomUnderSampler
+        estimator = ExtraTreesClassifier()
+        resampler = RandomUnderSampler(random_state=42)
+        main(csv_list, estimator, resampler, consts)
+
+        # RandomOverSampler
+        estimator = ExtraTreesClassifier()
+        resampler = RandomOverSampler(random_state=42)
+        main(csv_list, estimator, resampler, consts)
+
+        # SMOTE
+        estimator = ExtraTreesClassifier()
+        resampler = SMOTE(random_state=42, n_jobs=-1)
+        main(csv_list, estimator, resampler, consts)
+
+        # SMOTEENN
+        estimator = ExtraTreesClassifier()
+        resampler = SMOTEENN(random_state=42, n_jobs=-1)
+        main(csv_list, estimator, resampler, consts)
+
+        # SMOTETomek
+        estimator = ExtraTreesClassifier()
+        resampler = SMOTETomek(random_state=42, n_jobs=-1)
+        main(csv_list, estimator, resampler, consts)
 
         # # trial-rf-1
         # estimator = RandomForestClassifier()
@@ -155,10 +233,10 @@ if __name__ == '__main__':
         # resampler = SMOTE(random_state=42, n_jobs=-1)
         # main(csv_list, estimator, resampler, consts)
 
-        # [trial-exf-0] ExtraTreesClassifier / None
-        estimator = ExtraTreesClassifier()
-        resampler = None
-        main(csv_list, estimator, resampler, consts)
+        # # trial-exf-0
+        # estimator = ExtraTreesClassifier()
+        # resampler = None
+        # main(csv_list, estimator, resampler, consts)
 
         # # trial-exf-1
         # estimator = ExtraTreesClassifier()
