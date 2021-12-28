@@ -49,9 +49,9 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.M
     # train_set = df[df['session_id'].isin(consts.TRAIN_SET_SESSION)]
     # test_set = df[df['session_id'].isin(consts.TEST_SET_SESSION)]
     train_set = df[(df['session_id'].isin(consts.TRAIN_SET_SESSION)) & (
-        df['agc_status'] == 'AGC') & (df['distance'] <= 3)]
-    test_set = df[(df['session_id'].isin(consts.TEST_SET_SESSION))
-                  & (df['agc_status'] == 'AGC') & (df['distance'] <= 3)]
+        df['agc_status'].isin(consts.AGC_STATUS)) & (df['distance'].isin(consts.DISTANCE))]
+    test_set = df[(df['session_id'].isin(consts.TEST_SET_SESSION)) & (
+        df['agc_status'].isin(consts.AGC_STATUS)) & (df['distance'].isin(consts.DISTANCE))]
 
     print("データ読み込み完了")
 
