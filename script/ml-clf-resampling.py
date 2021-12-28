@@ -49,9 +49,9 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.M
     # train_set = df[df['session_id'].isin(consts.TRAIN_SET_SESSION)]
     # test_set = df[df['session_id'].isin(consts.TEST_SET_SESSION)]
     train_set = df[(df['session_id'].isin(consts.TRAIN_SET_SESSION)) & (
-        df['agc_status'] == 'AGC') & (df['distance'] <= 3)]
+        df['agc_status'] == 'AGC') & (df['distance'] == 5)]
     test_set = df[(df['session_id'].isin(consts.TEST_SET_SESSION))
-                  & (df['agc_status'] == 'AGC') & (df['distance'] <= 3)]
+                  & (df['agc_status'] == 'AGC') & (df['distance'] == 5)]
 
     print("データ読み込み完了")
 
@@ -176,7 +176,7 @@ if __name__ == '__main__':
         ### 0のみをfacingとする場合 ###
         #############################
         consts = load_constants.ML_Consts(
-            param_grid=param_grid, label_attrb=['facing'], facing_dov_angles=[1], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1', 'trial2'], test_set_session=['trial3', 'trial4', 'trial5'], output_path='../out/experiment_result/mbp2019')
+            param_grid=param_grid, label_attrb=['facing'], facing_dov_angles=[1], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1', 'trial2'], test_set_session=['trial3', 'trial4', 'trial5'], output_path='../out/experiment_result/2021-12-27-5m')
 
         # No resampler
         estimator = ExtraTreesClassifier()
