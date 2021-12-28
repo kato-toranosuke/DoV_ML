@@ -176,7 +176,7 @@ if __name__ == '__main__':
         ### 0のみをfacingとする場合 ###
         #############################
         consts = load_constants.ML_Consts(
-            param_grid=param_grid, label_attrb=['facing'], facing_dov_angles=[1], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1', 'trial2'], test_set_session=['trial3', 'trial4', 'trial5'], output_path='../out/experiment_result')
+            param_grid=param_grid, label_attrb=['facing'], facing_dov_angles=[1], csv_path='../out/csv/experiment', ncv=8, train_set_session=['trial1', 'trial2'], test_set_session=['trial3', 'trial4', 'trial5'], output_path='../out/experiment_result/2021-12-27-under3m')
 
         # No resampler
         estimator = ExtraTreesClassifier()
