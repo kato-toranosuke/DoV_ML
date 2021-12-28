@@ -1,0 +1,12 @@
+[*_2021-12-27_no*]
+- training時にresampleをかけていなもの。
+- CSV: 2021-12-01_mac_48000Hz_w1_N2^12_overlap80.csv
+- Facing angle: [0]
+- Distance: [0, 3, 5]
+
+[*_2021-12-28_no*]
+- training時にresampleをかけた。
+- SMOTEENN, SMOTETomekを追加
+- CSV: 2021-12-27_raspi_48000Hz_w1_N2^12_overlap80_withfacing.csv
+- Facing angle: [0]
+- Distance: [0, 3, 5]
