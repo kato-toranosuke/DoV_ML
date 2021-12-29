@@ -190,4 +190,4 @@ out/ml_model_result/ExtraTreesClassifier_NoResampler_2021-11-27_no0/ExtraTreesCl
 out/ml_model_fitting_result/ExtraTreesClassifier_ClusterCentroids_2021-11-04_no0.sav
 
 # for Ubuntu
-nohup.out
+nohup*.out
