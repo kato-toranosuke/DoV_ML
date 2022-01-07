@@ -10,6 +10,10 @@ from export_csv_mono_ch import createWav2Csv
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score, confusion_matrix
 from sklearn.model_selection import cross_val_predict, cross_validate
 
+from imblearn.under_sampling import RandomUnderSampler, ClusterCentroids
+from imblearn.over_sampling import RandomOverSampler, SMOTE
+from imblearn.combine import SMOTEENN, SMOTETomek
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from mylib.load_constants import Exp_Consts
 from mylib.load_csv import CsvToDf
@@ -18,13 +22,8 @@ from mylib.record_model_data import RecExpResultToMarkdown
 from mylib import record_model_data as rec
 
 class MlPred():
-    def __init__(self, train_filename_list: List = None, test_filename_list: List = None, input_pkl_filename: str = None, output_pkl_filename: str = None, csv_filename: str = None) -> None:
-        self.consts = Exp_Consts(dataset_path='../../experiment_dataset/2021-12-01_gym_mac',
-                                 train_csv_path='../out/csv',
-                                 test_csv_path='../out/csv/experiment',
-                                 input_pkl_path='../out/ml_model_result',
-                                 output_pkl_path='../out/ml_model_fitting_result',
-                                 output_path='../out/experiment_result')
+    def __init__(self, exp_consts: Exp_Consts, train_filename_list: List = None, test_filename_list: List = None, input_pkl_filename: str = None, output_pkl_filename: str = None, csv_filename: str = None) -> None:
+        self.consts = exp_consts
         self.train_filename_list = train_filename_list
         self.test_filename_list = test_filename_list
         self.input_pkl_filename = input_pkl_filename
@@ -52,7 +51,7 @@ class MlPred():
         # wav -> csv
         createWav2Csv(csv_filename, dataset_path, test_csv_path, w, N, overlap)
 
-    def fit(self, train_filename_list: List = None, train_csv_path: str = None, train_set_trial: List = None, input_pkl_filename: str = None, output_pkl_filename: str = None):
+    def fit(self, resampler=None, train_filename_list: List = None, train_csv_path: str = None, train_set_trial: List = None, input_pkl_filename: str = None, output_pkl_filename: str = None):
         '''
         hyper-parameters tuning済みのモデルを入力し、fittingさせたモデルを出力。
 
@@ -87,9 +86,18 @@ class MlPred():
 
         # 特徴量とラベルの分離
         pl = MlPipeline(self.consts)
-        X_train = pl.pick_features_pipeline.fit_transform(train_set)
-        y_train = pl.pick_label_pipeline.fit_transform(train_set)
+        _X = pl.pick_features_pipeline.fit_transform(train_set)
+        _y = pl.pick_label_pipeline.fit_transform(train_set)
         print('特徴量とラベルの分離完了')
+
+        # 学習データのリサンプリング
+        if resampler == None:
+            X_train = _X
+            y_train = _y
+        else:
+            X_train, y_train = resampler.fit_resample(_X, _y)
+
+        print("X_train: %d, y_train: %d" % (len(X_train), len(y_train)))
 
         # 学習
         if input_pkl_filename == None:
@@ -101,11 +109,12 @@ class MlPred():
         print('学習完了')
 
         # fittingした結果をpklへ保存する
+        os.makedirs(self.consts.OUTPUT_PKL_PATH, exist_ok=True)
         if output_pkl_filename == None:
             output_pkl_filename = self.output_pkl_filename
         output_pkl_filepath = self.consts.OUTPUT_PKL_PATH + '/' + output_pkl_filename
         joblib.dump(model, output_pkl_filepath)
-        print(f'pklへの出力: {output_pkl_filepath}')
+        print(f'pklへの出力: {output_pkl_filepath}\n')
 
     def fit_predict(self, test_filename_list: List = None, test_csv_path: str = None, test_set_trial: List = None, input_pkl_filename: str = None):
         '''
@@ -300,14 +309,6 @@ if __name__ == '__main__':
     # eng = MlPred(train_filename_list=args.train_files, test_filename_list=args.test_files,
     #              input_pkl_filename=args.input_pkl_filename, output_pkl_filename=args.output_pkl_filename, csv_filename=args.csv_filename)
 
-    train_filename_list = ['2021-12-01_mac_48000Hz_w1_N2^12_overlap80.csv']
-    test_filename_list = ['2021-12-27_raspi_48000Hz_w1_N2^12_overlap80.csv']
-    input_pkl_filename = None
-    output_pkl_filename = 'train_20211201_test_20211227_0-3-5m_0-45-315.pkl'
-    csv_filename = None  # wav->csvの時のcsvの名前
-    eng = MlPred(train_filename_list, test_filename_list,
-                 input_pkl_filename, output_pkl_filename, csv_filename)
-
     ###################
     ###  wav -> csv ###
     ###################
@@ -316,7 +317,48 @@ if __name__ == '__main__':
     ###########
     ### fit ###
     ###########
-    # eng.fit()
+    # consts
+    input_pkl_paths = ['../out/experiment_result/data_of_2021-12-27/AGC-0angle-under5m', '../out/experiment_result/data_of_2021-12-27/NoAGC-0angle-under5m',
+                       '../out/experiment_result/data_of_2021-12-27/AGC-45angle-under5m', '../out/experiment_result/data_of_2021-12-27/NoAGC-45angle-under5m']
+    label_attrbs = [['facing'], ['facing'], ['facing2'], ['facing2']]
+    facing_dov_angles = [[1], [1], [1, 2], [1, 2]]
+
+    # other
+    train_filename_list = [
+        '2021-12-27_raspi_48000Hz_w1_N2^12_overlap80_new.csv']
+    test_filename_list = [
+        '2021-12-27_raspi_48000Hz_w1_N2^12_overlap80_new.csv']
+    input_pkl_filenames = ['ExtraTreesClassifier_ClusterCentroids_2021-12-28_no8', 'ExtraTreesClassifier_RandomOverSampler_2021-12-29_no3',
+                           'ExtraTreesClassifier_SMOTE_2021-12-29_no4', 'ExtraTreesClassifier_NoResampler_2021-12-29_no0']  # ここを編集
+    output_pkl_filenames = ['AGC-0angle-under5m_2021-12-27_ExtraTreesClassifier_ClusterCentroids_2021-12-28_no8.sav', 'NoAGC-0angle-under5m_2021-12-27_ExtraTreesClassifier_RandomOverSampler_2021-12-29_no3.sav',
+                            'AGC-45angle-under5m_2021-12-27_ExtraTreesClassifier_SMOTE_2021-12-29_no4.sav', 'NoAGC-45angle-under5m_2021-12-27_ExtraTreesClassifier_NoResampler_2021-12-29_no0.sav']  # ここを編集
+    csv_filename = None  # wav->csvの時のcsvの名前 no edit
+
+    # resampler
+    resamplers = [ClusterCentroids(random_state=42), RandomOverSampler(
+        random_state=42), SMOTE(random_state=42, n_jobs=-1), None]
+
+    for i in range(4):
+        input_pkl_path = input_pkl_paths[i]
+        label_attrb = label_attrbs[i]
+        facing_dov_angle = facing_dov_angles[i]
+
+        input_pkl_filename = input_pkl_filenames[i]
+        output_pkl_filename = output_pkl_filenames[i]
+        resampler = resamplers[i]
+
+        consts = Exp_Consts(dataset_path='../../experiment_dataset/2021-12-01_gym_mac',
+                            train_csv_path='../out/csv/experiment',
+                            test_csv_path='../out/csv/experiment',
+                            input_pkl_path=input_pkl_path,  # edit
+                            output_pkl_path='../out/ml_model_fitting_result/2021-12-27/tmp',
+                            output_path='../out/experiment_result',
+                            label_attrb=label_attrb,
+                            facing_dov_angles=facing_dov_angle)
+
+        eng = MlPred(consts, train_filename_list, test_filename_list,
+                     input_pkl_filename, output_pkl_filename, csv_filename)
+        eng.fit(resampler, train_set_trial=['trial3', 'trial4', 'trial5'])
 
     ###############
     ### predict ###
