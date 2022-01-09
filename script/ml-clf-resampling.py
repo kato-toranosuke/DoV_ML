@@ -147,20 +147,20 @@ def ml_main(csv_list, consts):
     resampler = RandomOverSampler(random_state=42)
     main(csv_list, estimator, resampler, consts)
 
-    # SMOTE
-    estimator = ExtraTreesClassifier()
-    resampler = SMOTE(random_state=42, n_jobs=-1)
-    main(csv_list, estimator, resampler, consts)
+    # # SMOTE
+    # estimator = ExtraTreesClassifier()
+    # resampler = SMOTE(random_state=42, n_jobs=-1)
+    # main(csv_list, estimator, resampler, consts)
 
-    # SMOTEENN
-    estimator = ExtraTreesClassifier()
-    resampler = SMOTEENN(random_state=42, n_jobs=-1)
-    main(csv_list, estimator, resampler, consts)
+    # # SMOTEENN
+    # estimator = ExtraTreesClassifier()
+    # resampler = SMOTEENN(random_state=42, n_jobs=-1)
+    # main(csv_list, estimator, resampler, consts)
 
-    # SMOTETomek
-    estimator = ExtraTreesClassifier()
-    resampler = SMOTETomek(random_state=42, n_jobs=-1)
-    main(csv_list, estimator, resampler, consts)
+    # # SMOTETomek
+    # estimator = ExtraTreesClassifier()
+    # resampler = SMOTETomek(random_state=42, n_jobs=-1)
+    # main(csv_list, estimator, resampler, consts)
 
 
 if __name__ == '__main__':
@@ -171,16 +171,15 @@ if __name__ == '__main__':
 
         # 定数の設定
         # 探索パラメータ
+        # range(100, 1600, 100) 使える
         param_grid = [
-            {'est__n_estimators': [50, 100, 150, 200, 300], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+            {'est__n_estimators': range(10, 1000, 25), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
                 'sqrt', 'log2', None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]},
-            {'est__n_estimators': [50, 100, 150, 200, 300], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
-                'sqrt', 'log2', None], 'est__bootstrap': [True], 'est__oob_score': [True, False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]}
         ]
         # param_grid = [
-        #     {'est__n_estimators': range(100, 1600, 100), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+        #     {'est__n_estimators': [50, 100, 150, 200, 300], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
         #         'sqrt', 'log2', None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]},
-        #     {'est__n_estimators': range(100, 1600, 100), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+        #     {'est__n_estimators': [50, 100, 150, 200, 300], 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
         #         'sqrt', 'log2', None], 'est__bootstrap': [True], 'est__oob_score': [True, False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]}
         # ]
         # param_grid = [
@@ -224,13 +223,21 @@ if __name__ == '__main__':
         # agc_statuses = [['AGC'], ['NoAGC']]
         agc_statuses = [['AGC']]
 
-        distances = [[1, 3, 5], [1], [3], [5], [1, 3]]
-        distances_name = ['under5m', '1m', '3m', '5m', 'under3m']
+        distances = [[1, 3, 5]]
+        distances_name = ['under5m']
+        # label_attrbs = [['facing'], ['facing2']]
+        # facing_dov_angles = [[1], [1, 2]]
+        # angles = ['0', '45']
+
+        # agc_statuses = [['AGC'], ['NoAGC']]
+
+        # distances = [[1, 3, 5], [1], [3], [5], [1, 3]]
+        # distances_name = ['under5m', '1m', '3m', '5m', 'under3m']
 
         for i, label_attrb in enumerate(label_attrbs):
             for agc_status in agc_statuses:
                 for j, distance in enumerate(distances):
-                    output_path = '../out/experiment_result/data_of_2022-01-07_new/' + \
+                    output_path = '../out/experiment_result/data_of_2022-01-07_new2/' + \
                         agc_status[0] + '-' + angles[i] + \
                         'angle-' + distances_name[j]
                     os.makedirs(output_path, exist_ok=True)
