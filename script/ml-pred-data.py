@@ -318,27 +318,37 @@ if __name__ == '__main__':
     ### fit ###
     ###########
     # consts
-    input_pkl_paths = ['../out/experiment_result/data_of_2021-12-27/AGC-0angle-under5m', '../out/experiment_result/data_of_2021-12-27/NoAGC-0angle-under5m',
-                       '../out/experiment_result/data_of_2021-12-27/AGC-45angle-under5m', '../out/experiment_result/data_of_2021-12-27/NoAGC-45angle-under5m']
-    label_attrbs = [['facing'], ['facing'], ['facing2'], ['facing2']]
-    facing_dov_angles = [[1], [1], [1, 2], [1, 2]]
+    # input_pkl_paths = ['../out/experiment_result/data_of_2022-01-07_new/AGC-0angle-under5m', '../out/experiment_result/data_of_2021-12-27/NoAGC-0angle-under5m',
+    #                    '../out/experiment_result/data_of_2021-12-27/AGC-45angle-under5m', '../out/experiment_result/data_of_2021-12-27/NoAGC-45angle-under5m']
+    # label_attrbs = [['facing'], ['facing'], ['facing2'], ['facing2']]
+    # facing_dov_angles = [[1], [1], [1, 2], [1, 2]]
+    input_pkl_paths = ['../out/experiment_result/data_of_2022-01-07_new/AGC-0angle-under5m',
+                       '../out/experiment_result/data_of_2022-01-07_new/AGC-45angle-under5m']
+    label_attrbs = [['facing'], ['facing2']]
+    facing_dov_angles = [[1], [1, 2]]
 
     # other
     train_filename_list = [
-        '2021-12-27_raspi_48000Hz_w1_N2^12_overlap80_new.csv']
+        '2021-12-27_raspi_48000Hz_w1_N2^12_overlap80_with2022-01-07.csv']
     test_filename_list = [
-        '2021-12-27_raspi_48000Hz_w1_N2^12_overlap80_new.csv']
-    input_pkl_filenames = ['ExtraTreesClassifier_ClusterCentroids_2021-12-28_no8', 'ExtraTreesClassifier_RandomOverSampler_2021-12-29_no3',
-                           'ExtraTreesClassifier_SMOTE_2021-12-29_no4', 'ExtraTreesClassifier_NoResampler_2021-12-29_no0']  # ここを編集
-    output_pkl_filenames = ['AGC-0angle-under5m_2021-12-27_ExtraTreesClassifier_ClusterCentroids_2021-12-28_no8.sav', 'NoAGC-0angle-under5m_2021-12-27_ExtraTreesClassifier_RandomOverSampler_2021-12-29_no3.sav',
-                            'AGC-45angle-under5m_2021-12-27_ExtraTreesClassifier_SMOTE_2021-12-29_no4.sav', 'NoAGC-45angle-under5m_2021-12-27_ExtraTreesClassifier_NoResampler_2021-12-29_no0.sav']  # ここを編集
+        '2021-12-27_raspi_48000Hz_w1_N2^12_overlap80_with2022-01-07.csv']
+    # input_pkl_filenames = ['ExtraTreesClassifier_ClusterCentroids_2021-12-28_no8', 'ExtraTreesClassifier_RandomOverSampler_2021-12-29_no3',
+    #                        'ExtraTreesClassifier_SMOTE_2021-12-29_no4', 'ExtraTreesClassifier_NoResampler_2021-12-29_no0']  # ここを編集
+    # output_pkl_filenames = ['AGC-0angle-under5m_2021-12-27_ExtraTreesClassifier_ClusterCentroids_2021-12-28_no8.sav', 'NoAGC-0angle-under5m_2021-12-27_ExtraTreesClassifier_RandomOverSampler_2021-12-29_no3.sav',
+    #                         'AGC-45angle-under5m_2021-12-27_ExtraTreesClassifier_SMOTE_2021-12-29_no4.sav', 'NoAGC-45angle-under5m_2021-12-27_ExtraTreesClassifier_NoResampler_2021-12-29_no0.sav']  # ここを編集
+    input_pkl_filenames = ['ExtraTreesClassifier_RandomUnderSampler_2022-01-09_no2',
+                           'ExtraTreesClassifier_NoResampler_2022-01-09_no0']  # ここを編集
+    output_pkl_filenames = ['AGC-0angle-under5m_2022-01-07_ExtraTreesClassifier_RandomUnderSampler_2022-01-09_no2.sav',
+                            'AGC-45angle-under5m_2022-01-07_ExtraTreesClassifier_NoResampler_2022-01-09_no0.sav']  # ここを編集
     csv_filename = None  # wav->csvの時のcsvの名前 no edit
 
     # resampler
+    # resamplers = [ClusterCentroids(random_state=42), RandomOverSampler(
+    #     random_state=42), SMOTE(random_state=42, n_jobs=-1), None]
     resamplers = [ClusterCentroids(random_state=42), RandomOverSampler(
         random_state=42), SMOTE(random_state=42, n_jobs=-1), None]
 
-    for i in range(4):
+    for i in range(2):
         input_pkl_path = input_pkl_paths[i]
         label_attrb = label_attrbs[i]
         facing_dov_angle = facing_dov_angles[i]
@@ -351,7 +361,7 @@ if __name__ == '__main__':
                             train_csv_path='../out/csv/experiment',
                             test_csv_path='../out/csv/experiment',
                             input_pkl_path=input_pkl_path,  # edit
-                            output_pkl_path='../out/ml_model_fitting_result/2021-12-27/tmp',
+                            output_pkl_path='../out/ml_model_fitting_result/2022-01-07',
                             output_path='../out/experiment_result',
                             label_attrb=label_attrb,
                             facing_dov_angles=facing_dov_angle)
