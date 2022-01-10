@@ -147,20 +147,20 @@ def ml_main(csv_list, consts):
     resampler = RandomOverSampler(random_state=42)
     main(csv_list, estimator, resampler, consts)
 
-    # # SMOTE
-    # estimator = ExtraTreesClassifier()
-    # resampler = SMOTE(random_state=42, n_jobs=-1)
-    # main(csv_list, estimator, resampler, consts)
+    # SMOTE
+    estimator = ExtraTreesClassifier()
+    resampler = SMOTE(random_state=42, n_jobs=-1)
+    main(csv_list, estimator, resampler, consts)
 
-    # # SMOTEENN
-    # estimator = ExtraTreesClassifier()
-    # resampler = SMOTEENN(random_state=42, n_jobs=-1)
-    # main(csv_list, estimator, resampler, consts)
+    # SMOTEENN
+    estimator = ExtraTreesClassifier()
+    resampler = SMOTEENN(random_state=42, n_jobs=-1)
+    main(csv_list, estimator, resampler, consts)
 
-    # # SMOTETomek
-    # estimator = ExtraTreesClassifier()
-    # resampler = SMOTETomek(random_state=42, n_jobs=-1)
-    # main(csv_list, estimator, resampler, consts)
+    # SMOTETomek
+    estimator = ExtraTreesClassifier()
+    resampler = SMOTETomek(random_state=42, n_jobs=-1)
+    main(csv_list, estimator, resampler, consts)
 
 
 if __name__ == '__main__':
@@ -220,24 +220,15 @@ if __name__ == '__main__':
         facing_dov_angles = [[1], [1, 2]]
         angles = ['0', '45']
 
-        # agc_statuses = [['AGC'], ['NoAGC']]
-        agc_statuses = [['AGC']]
+        agc_statuses = [['AGC'], ['NoAGC']]
 
-        distances = [[1, 3, 5]]
-        distances_name = ['under5m']
-        # label_attrbs = [['facing'], ['facing2']]
-        # facing_dov_angles = [[1], [1, 2]]
-        # angles = ['0', '45']
-
-        # agc_statuses = [['AGC'], ['NoAGC']]
-
-        # distances = [[1, 3, 5], [1], [3], [5], [1, 3]]
-        # distances_name = ['under5m', '1m', '3m', '5m', 'under3m']
+        distances = [[1, 3, 5], [1], [3], [5], [1, 3]]
+        distances_name = ['under5m', '1m', '3m', '5m', 'under3m']
 
         for i, label_attrb in enumerate(label_attrbs):
             for agc_status in agc_statuses:
                 for j, distance in enumerate(distances):
-                    output_path = '../out/experiment_result/data_of_2022-01-07_new2/' + \
+                    output_path = '../out/experiment_result/data_of_2022-01-10/' + \
                         agc_status[0] + '-' + angles[i] + \
                         'angle-' + distances_name[j]
                     os.makedirs(output_path, exist_ok=True)

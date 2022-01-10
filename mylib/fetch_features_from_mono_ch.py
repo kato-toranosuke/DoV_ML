@@ -241,7 +241,7 @@ def FetchFeaturesFromExpDataset(DATASET_PATH: str, w: int, N: Union[int, str], o
     # raspi
     participant_ids = ['raspi-ubuntu-' + str(i) for i in range(1, 6)]
     # 日付
-    dates = ['2021-12-27']
+    dates = ['2022-01-10']
     # 状態
     statuses = ['standup']
     # AGC
@@ -251,7 +251,7 @@ def FetchFeaturesFromExpDataset(DATASET_PATH: str, w: int, N: Union[int, str], o
     # 角度
     angles = [0, 45, 90, 135, 180]
     # セッション
-    session_ids = ['trial' + str(i) for i in range(1, 7)]
+    session_ids = ['trial' + str(i) for i in range(1, 15)]
 
     # GCC-PHAT, TDOA以外の計算に用いるマイクチャンネル(音声認識用に使用しているchannel0のみ特徴量抽出に利用する。)
     mic_channel = 0
