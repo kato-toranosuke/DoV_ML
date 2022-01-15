@@ -2,11 +2,13 @@
 # coding: utf-8
 
 from typing import List, Union, Dict
+from sklearn import metrics
 from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
 import datetime
 import os
 import re
 import joblib
+import numpy as np
 from .load_constants import ML_Consts, Exp_Consts
 
 
@@ -296,6 +298,128 @@ class RecModelDataToMdWithResampler(RecModelDataToMarkdown):
 
         dir_name = est_str + '_' + resmp_str + '_' + d_today + '_no' + str(no)
         return dir_name
+
+class RecModelDataToMdEvalSys(RecModelDataToMdWithResampler):
+    def __init__(self, consts: ML_Consts, csv_list: List, best_resampler, best_estimator, results) -> None:
+        super().__init__(consts, csv_list, best_resampler, best_estimator, None, None)
+        self.results = results
+
+    def GetConfMat(self, conf_mats, level=4):
+        conf_mat_str = '#' * level + ' Confusion Matrix'
+        conf_mat = np.mean(conf_mats, axis=0)
+        conf_mat_str += f"""\
+|  | Predicted Negative | Predicted Positive |
+| --- | --- | --- |
+| Actual Negative | {conf_mat[0][0]} | {conf_mat[0][1]} |
+| Actual Positive | {conf_mat[1][0]} | {conf_mat[1][1]} |
+
+"""
+        return conf_mat_str
+
+    def GetEvaluationScore(self, scores: List, metrics: List, level=3) -> str:
+        '''
+        評価の結果を文字列で返す。
+
+        Parameters
+        ----------
+        score: array-like
+          各種スコアが格納された配列
+        metrics: array-like
+          評価指標
+
+        Returns
+        -------
+        output_str: str
+          結果ファイル用の文字列
+        '''
+        output_str = ""
+        prefix = '#' * level
+
+        for metric in metrics:
+            score = scores[metric]
+
+            # score_str = '[ '
+            # score_str += ', '.join([str(s) for s in score])
+            # score_str += ' ]'
+
+            score_dict = {
+                # 'Scores': score_str,
+                'Mean': np.mean(score, axis=0),
+                'Standard deviation': np.std(score, axis=0)
+            }
+            output_str += (prefix + ' ' + metric + '\n')
+            output_str += self.GetDictStr(score_dict)
+
+        return output_str
+
+    def write(self):
+        # 実行中のスクリプトの名前を取得
+        dir_name = self.GetDirname(
+            self.consts.OUTPUT_PATH, self.best_estimator, self.best_resampler)
+        output_dir_path = self.consts.OUTPUT_PATH + '/' + dir_name
+        # 出力するデータを格納するディレクトリを作成
+        os.mkdir(output_dir_path)
+
+        # モデルの保存
+        pkl_path = output_dir_path + "/" + dir_name + ".pkl"
+        joblib.dump(self.best_estimator, pkl_path)
+
+        # 結果ファイル
+        result_file_path = output_dir_path + "/" + dir_name + ".md"
+        with open(result_file_path, 'w') as f:
+            output_str = '# ' + dir_name + '\n'
+            # 定数の記録
+            consts_str = "## Constants\n" + self.GetInstanceValStr(self.consts)
+            # 読み込んだCSVファイル
+            csv_str = '## Loaded CSV\n' + self.GetListStr(self.csv_list)
+            # 推定器
+            estimator_str = '## Estimator\n'
+            estimator_str += '### Type\n'
+            estimator_str += '- resampler = ' + self.best_resampler.__class__.__name__ + '\n'
+            estimator_str += '- estimator = ' + self.best_estimator.__class__.__name__ + '\n'
+            estimator_str += '\n'
+            # Grid Search CV
+            estimator_str += '### Arguments for hyperparameter search\n'
+            estimator_str += '- resampler = ' + self.best_resampler.__class__.__name__ + '\n'
+            estimator_str += '- estimator = ' + self.best_estimator.__class__.__name__ + '\n'
+            estimator_str += '- param_grid = \n' + \
+                self.GetListStr(self.consts.PARAM_GRID, level=1)
+            estimator_str += '- scoring = ' + str(self.consts.SCORING) + '\n'
+            estimator_str += '- refit = ' + \
+                str(self.consts.REFIT_SCORING) + '\n'
+            estimator_str += '- cv = ' + str(self.consts.NCV) + '\n'
+            estimator_str += '\n'
+            # Best Estimator(ベストハイパラ、特徴量の重要度)
+            estimator_str += '### Parameters of the best estimator\n'
+            estimator_str += '#### The best hyper-parameters\n'
+            estimator_str += '- best_resampler\n'
+            estimator_str += self.GetDictStr(
+                self.best_resampler.__dict__, level=1)
+            estimator_str += '- best_estimator\n'
+            estimator_str += self.GetDictStr(
+                self.best_estimator.__dict__, level=1)
+            estimator_str += '#### Importance of features\n'
+            feature_importance = self.GetFeaturesImportance(
+                self.best_estimator, self.consts.FEATURE_ATTRBS)
+            estimator_str += self.GetDictStr(feature_importance, level=0)
+
+            # 評価
+            evaluation_str = '## Evaluation\n'
+            evaluation_str += 'cv = ' + str(self.consts.NCV) + '\n'
+            for i in range(5):
+                evaluation_str += f"### robot-{i+1}\n"
+                metrics = ['accuracy', 'f1', 'precision',
+                           'recall', 'facing_probas']
+                scores = self.results[i]
+                evaluation_str += self.GetEvaluationScore(scores, metrics, 4)
+                evaluation_str += self.GetConfMat(
+                    self.results[i]['confusion_matrix'])
+
+            output_str += (consts_str + csv_str +
+                           estimator_str + evaluation_str)
+
+            f.writelines(output_str)
+
 
 class RecExpResultToMarkdown(RecModelDataToMarkdown):
     def __init__(self, fname: str, consts: Exp_Consts, accuracy_score, balanced_accuracy_score, f1_score, confusion_matrix, pkl_fname, train_filename_list, test_filename_list) -> None:
