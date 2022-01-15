@@ -227,7 +227,7 @@ def GetRowDataFromExpData(dir_path: str, attr: Dict, gp_tdoa_mic_channels: List,
     ### 属性情報 ###
     ###############
     attr = [attr['id'], filename, attr['participant_id'], attr['date'], attr['status'], attr['agc_status'],
-            attr['distance'], attr['angle'], attr['session_id'], attr['mic_channel']]
+            attr['distance'], attr['angle'], attr['session_id'], attr['mic_channel'], attr['facing'], attr['facing2']]
 
     # 行情報を生成
     row = attr + features + gp_tdoa_features
@@ -241,7 +241,7 @@ def FetchFeaturesFromExpDataset(DATASET_PATH: str, w: int, N: Union[int, str], o
     # raspi
     participant_ids = ['raspi-ubuntu-' + str(i) for i in range(1, 6)]
     # 日付
-    dates = ['2022-01-10']
+    dates = ['2022-01-13']
     # 状態
     statuses = ['standup']
     # AGC
@@ -251,7 +251,7 @@ def FetchFeaturesFromExpDataset(DATASET_PATH: str, w: int, N: Union[int, str], o
     # 角度
     angles = [0, 45, 90, 135, 180]
     # セッション
-    session_ids = ['trial' + str(i) for i in range(1, 15)]
+    session_ids = ['trial' + str(i) for i in range(1, 21)]
 
     # GCC-PHAT, TDOA以外の計算に用いるマイクチャンネル(音声認識用に使用しているchannel0のみ特徴量抽出に利用する。)
     mic_channel = 0
@@ -293,6 +293,57 @@ def FetchFeaturesFromExpDataset(DATASET_PATH: str, w: int, N: Union[int, str], o
                                 attr['angle'] = angle
                                 attr['session_id'] = session_id
                                 attr['mic_channel'] = mic_channel
+
+                                if participant_id == 'raspi-ubuntu-1':
+                                    if angle == 0:
+                                        attr['facing'] = 1
+                                        attr['facing2'] = 1
+                                    elif angle == 45:
+                                        attr['facing'] = 0
+                                        attr['facing2'] = 2
+                                    else:
+                                        attr['facing'] = 0
+                                        attr['facing2'] = 0
+                                elif participant_id == 'raspi-ubuntu-2':
+                                    if angle == 45:
+                                        attr['facing'] = 1
+                                        attr['facing2'] = 1
+                                    elif angle == 0 or angle == 90:
+                                        attr['facing'] = 0
+                                        attr['facing2'] = 2
+                                    else:
+                                        attr['facing'] = 0
+                                        attr['facing2'] = 0
+                                elif participant_id == 'raspi-ubuntu-3':
+                                    if angle == 90:
+                                        attr['facing'] = 1
+                                        attr['facing2'] = 1
+                                    elif angle == 45 or angle == 135:
+                                        attr['facing'] = 0
+                                        attr['facing2'] = 2
+                                    else:
+                                        attr['facing'] = 0
+                                        attr['facing2'] = 0
+                                elif participant_id == 'raspi-ubuntu-4':
+                                    if angle == 135:
+                                        attr['facing'] = 1
+                                        attr['facing2'] = 1
+                                    elif angle == 90 or angle == 180:
+                                        attr['facing'] = 0
+                                        attr['facing2'] = 2
+                                    else:
+                                        attr['facing'] = 0
+                                        attr['facing2'] = 0
+                                elif participant_id == 'raspi-ubuntu-5':
+                                    if angle == 180:
+                                        attr['facing'] = 1
+                                        attr['facing2'] = 1
+                                    elif angle == 135:
+                                        attr['facing'] = 0
+                                        attr['facing2'] = 2
+                                    else:
+                                        attr['facing'] = 0
+                                        attr['facing2'] = 0
 
                                 try:
                                     row = GetRowDataFromExpData(
