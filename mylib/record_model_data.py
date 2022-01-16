@@ -345,13 +345,7 @@ class RecModelDataToMdEvalSys(RecModelDataToMdWithResampler):
 
         for metric in metrics:
             score = scores[metric]
-
-            # score_str = '[ '
-            # score_str += ', '.join([str(s) for s in score])
-            # score_str += ' ]'
-
             score_dict = {
-                # 'Scores': score_str,
                 'Mean': np.mean(score, axis=0),
                 'Standard deviation': np.std(score, axis=0)
             }
@@ -364,6 +358,7 @@ class RecModelDataToMdEvalSys(RecModelDataToMdWithResampler):
         # 実行中のスクリプトの名前を取得
         dir_name = self.GetDirname(
             self.consts.OUTPUT_PATH, self.best_estimator, self.best_resampler)
+        print(f'\nFile name: {dir_name}')
         output_dir_path = self.consts.OUTPUT_PATH + '/' + dir_name
         # 出力するデータを格納するディレクトリを作成
         os.mkdir(output_dir_path)
