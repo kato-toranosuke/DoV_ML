@@ -123,6 +123,9 @@ class RecModelDataToMarkdown():
           結果のファイルを出力するディレクトリのパス
         '''
         # 現在日時
+        dt_now_jst = datetime.datetime.now(
+            datetime.timezone(datetime.timedelta(hours=9))
+        )
         d_today = datetime.date.today().isoformat()
         # 実行中のスクリプトの名前を取得
         # resultディレクトリに同一日時のディレクトリがいくつあるか
@@ -134,7 +137,7 @@ class RecModelDataToMarkdown():
             if is_match != None:
                 no += 1
 
-        dir_name = fname + '_' + d_today + '_no' + str(no)
+        dir_name = fname + dt_now_jst.strftime('_%Y-%m-%d-%H-%M_no') + str(no)
         return dir_name
 
     def GetFeaturesImportance(self, model: Union[ExtraTreesClassifier, RandomForestClassifier], feature_attrbs: List) -> Dict:
@@ -282,6 +285,9 @@ class RecModelDataToMdWithResampler(RecModelDataToMarkdown):
 
     def GetDirname(self, output_path, estimator, resampler) -> str:
         # 現在日時
+        dt_now_jst = datetime.datetime.now(
+            datetime.timezone(datetime.timedelta(hours=9))
+        )
         d_today = datetime.date.today().isoformat()
         # 実行中のスクリプトの名前を取得
         # resultディレクトリに同一日時のディレクトリがいくつあるか
@@ -296,16 +302,18 @@ class RecModelDataToMdWithResampler(RecModelDataToMarkdown):
         est_str = estimator.__class__.__name__
         resmp_str = resampler.__class__.__name__
 
-        dir_name = est_str + '_' + resmp_str + '_' + d_today + '_no' + str(no)
+        dir_name = est_str + '_' + resmp_str + \
+            dt_now_jst.strftime('_%Y-%m-%d-%H-%M_no') + str(no)
         return dir_name
 
 class RecModelDataToMdEvalSys(RecModelDataToMdWithResampler):
-    def __init__(self, consts: ML_Consts, csv_list: List, best_resampler, best_estimator, results) -> None:
+    def __init__(self, consts: ML_Consts, csv_list: List, best_resampler, best_estimator, results, n=6) -> None:
         super().__init__(consts, csv_list, best_resampler, best_estimator, None, None)
         self.results = results
+        self.n = n
 
     def GetConfMat(self, conf_mats, level=4):
-        conf_mat_str = '#' * level + ' Confusion Matrix'
+        conf_mat_str = '#' * level + ' Confusion Matrix\n'
         conf_mat = np.mean(conf_mats, axis=0)
         conf_mat_str += f"""\
 |  | Predicted Negative | Predicted Positive |
@@ -406,14 +414,15 @@ class RecModelDataToMdEvalSys(RecModelDataToMdWithResampler):
             # 評価
             evaluation_str = '## Evaluation\n'
             evaluation_str += 'cv = ' + str(self.consts.NCV) + '\n'
-            for i in range(5):
+            for i in range(self.n):
                 evaluation_str += f"### robot-{i+1}\n"
                 metrics = ['accuracy', 'f1', 'precision',
                            'recall', 'facing_probas']
                 scores = self.results[i]
                 evaluation_str += self.GetEvaluationScore(scores, metrics, 4)
-                evaluation_str += self.GetConfMat(
-                    self.results[i]['confusion_matrix'])
+                if(i < self.n - 1):
+                    evaluation_str += self.GetConfMat(
+                        self.results[i]['confusion_matrix'])
 
             output_str += (consts_str + csv_str +
                            estimator_str + evaluation_str)
