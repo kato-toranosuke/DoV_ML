@@ -6,6 +6,8 @@ import sys
 import os
 import numpy as np
 import pprint
+import joblib
+import copy
 from imblearn.pipeline import Pipeline as ImbPipeline
 from imblearn.under_sampling import RandomUnderSampler, ClusterCentroids
 from imblearn.over_sampling import RandomOverSampler, SMOTE
@@ -45,7 +47,8 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.E
 
     # CSVを読み込む
     df = load_csv.CsvToDf(csv_filename_list, consts.CSV_PATH)
-    print("データ読み込み完了")
+    print("\n######################################")
+    print("Complete! Loaded data from csv")
 
     ###############################
     ### Hyper-Parameter Tuning  ###
@@ -70,7 +73,7 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.E
     search = GridSearchCV(estimator=hp_pipeline, param_grid=consts.PARAM_GRID, scoring=consts.SCORING,
                           n_jobs=-1, refit=consts.REFIT_SCORING, cv=consts.NCV, return_train_score=False)
     search.fit(X_hp, y_hp)
-    print('Hyper-Parameter Tuning 完了')
+    print('Complete! Hyper-Parameter Tuning')
 
     #######################
     ### Training & Test ###
@@ -81,13 +84,14 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.E
 
     result = {'accuracy': [], 'f1': [], 'precision': [],
               'recall': [], 'confusion_matrix': [], 'facing_probas': []}
-    results = [result for i in range(n_robot + 1)]
+    results = [copy.deepcopy(result) for i in range(n_robot + 1)]
     for k in range(consts.NCV):
         print('--------------')
         print(f'[{k+1}/{consts.NCV}] Training & Test')
         # train_set_session と test_set_sessionに分離
         train_set_session, test_set_session = train_test_split(
             train_test_set_session, train_size=3)
+        pprint.pprint(f'train_set_session: {train_set_session}')
 
         # training, testに使用するデータを抽出する
         train_set = df[(df['session_id'].isin(train_set_session)) & (
@@ -113,9 +117,6 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.E
         best_estimator = search.best_estimator_['est']
         fitted_model = best_estimator.fit(X_train, y_train)
 
-        # fitted_model = ExtraTreesClassifier(random_state=42)
-        # fitted_model.fit(X_train_, y_train_)
-
         # [Test]
         # 正解ラベルを作成する
         X_test = []
@@ -125,7 +126,7 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.E
                     # 5台分をまとめた辞書型
                     X = {'distance': d, 'angle': angle,
                          'robot_data': [], 'label': int(angle / 45) + 1}
-                    for robot_id in range(1, 6):
+                    for robot_id in range(1, n_robot + 1):
                         robot_item = {'robot_id': robot_id}
                         robot_df = test_set[(test_set['session_id'] == session) & (
                             test_set['angle'] == angle) & (test_set['distance'] == d) & (test_set['participant_id'] == 'raspi-ubuntu-' + str(robot_id))]
@@ -176,28 +177,41 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.E
         # Robot1~5毎の単体精度
         for i in range(n_robot):
             target_angle = 45 * i
+            robot_id = i + 1
 
-            X_test_target = [X for X in X_test if (
+            X_test_target_onlyfacing = [X for X in X_test if (
                 X['distance'] in consts.DISTANCE and X['angle'] == target_angle)]
+            X_test_target_all = [X for X in X_test if (
+                X['distance'] in consts.DISTANCE)]
 
-            y_true = [X.get('label') for X in X_test_target]
-            y_pred = [X.get('label_pred') for X in X_test_target]
+            y_true_onlyfacing = [X.get('label')
+                                 for X in X_test_target_onlyfacing]
+            y_pred_onlyfacing = [X.get('label_pred')
+                                 for X in X_test_target_onlyfacing]
+            y_true_all = [X.get('label') for X in X_test_target_all]
+            y_pred_all = [X.get('label_pred') for X in X_test_target_all]
             robot_probas = []
             for j in range(n_robot):
                 # robot毎のfacing probaを算出
                 facing_probas = [X['robot_data'][j]['probas'][1]
-                                 for X in X_test_target]
+                                 for X in X_test_target_onlyfacing]
                 mean_facing_proba = np.mean(facing_probas)
                 robot_probas.append(mean_facing_proba)
 
-            sys_accuracy = accuracy_score(y_true, y_pred)
-            sys_f1 = f1_score(y_true, y_pred, average='micro')
-            sys_precision = precision_score(y_true, y_pred, average='micro')
-            sys_recall = recall_score(y_true, y_pred, average='micro')
-            y_true_bin = [1] * len(y_true)
-            y_pred_bin = [1 if y_pred[i] == y_true[i]
-                          else 0 for i in range(len(y_true))]
-            sys_conf_mat = confusion_matrix(y_true_bin, y_pred_bin)
+            sys_accuracy = accuracy_score(y_true_all, y_pred_all)
+            sys_f1 = f1_score(y_true_all, y_pred_all, average='micro')
+            sys_precision = precision_score(
+                y_true_all, y_pred_all, average='micro')
+            sys_recall = recall_score(y_true_all, y_pred_all, average='micro')
+            # confusion matrix
+            y_true_bin_all = [1 if y_true_all[j] ==
+                              robot_id else 0 for j in range(len(y_true_all))]
+            y_pred_bin_all = [1 if y_pred_all[j] == y_true_all[j]
+                              else 0 for j in range(len(y_true_all))]
+            sys_conf_mat = confusion_matrix(y_true_bin_all, y_pred_bin_all)
+            # conf matがtpしかない場合の対応
+            if len(sys_conf_mat == 1):
+                sys_conf_mat = [[sys_conf_mat[0][0], 0], [0, 0]]
 
             results[i]['accuracy'].append(sys_accuracy)
             results[i]['f1'].append(sys_f1)
@@ -226,12 +240,17 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.E
         results[n_robot]['confusion_matrix'].append(sys_conf_mat)
         results[n_robot]['facing_probas'] = [-100]
 
+    print('--------------\nComplete! Training & Test')
     ################
     ### 結果の出力 ###
     ################
+    print('Results')
+    for i, res in enumerate(results):
+        print(f'{i}: {res}')
     record = rec.RecModelDataToMdEvalSys(
         consts, csv_list, best_resampler, best_estimator, results)
     record.write()
+    print('Complete! Output the result to a file.')
 
 def ml_main(csv_list, consts):
     # No resampler
@@ -281,9 +300,9 @@ if __name__ == '__main__':
     #         'sqrt', 'log2', None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]},
     # ]
     param_grid = [
-        {'est__n_estimators': range(50, 1001, 50), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+        {'est__n_estimators': range(10, 400, 20), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
             'sqrt', 'log2', None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]},
-        {'est__n_estimators': range(50, 1001, 50), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+        {'est__n_estimators': range(10, 400, 20), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
             'sqrt', 'log2', None], 'est__bootstrap': [True], 'est__oob_score': [True, False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]}
     ]
 
