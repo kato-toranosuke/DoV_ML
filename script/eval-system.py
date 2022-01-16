@@ -107,6 +107,7 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.E
         # resamplerの設定 & データのリサンプリング
         if resampler != None:
             best_resampler = search.best_estimator_['resmp']
+            # best_resampler = resampler
             X_train, y_train = best_resampler.fit_resample(X_train_, y_train_)
         else:
             best_resampler = pipeline_comps.NoResampler()
@@ -115,6 +116,8 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.E
 
         # training
         best_estimator = search.best_estimator_['est']
+        # best_estimator = joblib.load(open(
+        #     '../out/experiment_result/data_of_2022-01-13_eval_system/AGC-0angle-1m/old/ExtraTreesClassifier_ClusterCentroids_2022-01-16_no1/ExtraTreesClassifier_ClusterCentroids_2022-01-16_no1.pkl', 'rb'))
         fitted_model = best_estimator.fit(X_train, y_train)
 
         # [Test]
@@ -193,8 +196,8 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.E
             y_pred_all = [X.get('label_pred') for X in X_test_all_ang]
             y_true_all_bin = [1 if y_true_all[j] ==
                               robot_id else 0 for j in range(len(y_true_all))]
-            y_pred_all_bin = [1 if y_pred_all[j] == y_true_all[j]
-                              else 0 for j in range(len(y_true_all))]
+            y_pred_all_bin = [1 if y_pred_all[j] ==
+                              robot_id else 0 for j in range(len(y_true_all))]
 
             robot_probas = []
             for j in range(n_robot):
@@ -205,11 +208,16 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.E
                 robot_probas.append(mean_facing_proba)
 
             sys_accuracy = accuracy_score(y_true_all_bin, y_pred_all_bin)
-            sys_f1 = f1_score(y_true_all_bin, y_pred_all_bin, average='micro')
+            sys_f1 = f1_score(y_true_all_bin, y_pred_all_bin)
             sys_precision = precision_score(
-                y_true_all_bin, y_pred_all_bin, average='micro')
+                y_true_all_bin, y_pred_all_bin)
             sys_recall = recall_score(
-                y_true_all_bin, y_pred_all_bin, average='micro')
+                y_true_all_bin, y_pred_all_bin)
+            # sys_f1 = f1_score(y_true_all_bin, y_pred_all_bin, average='micro')
+            # sys_precision = precision_score(
+            #     y_true_all_bin, y_pred_all_bin, average='micro')
+            # sys_recall = recall_score(
+            #     y_true_all_bin, y_pred_all_bin, average='micro')
             # confusion matrix
             sys_conf_mat = confusion_matrix(y_true_all_bin, y_pred_all_bin)
             # conf matがtpしかない場合の対応
@@ -226,14 +234,19 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.E
         # トータル精度
         y_true = [X.get('label') for X in X_test]
         y_pred = [X.get('label_pred') for X in X_test]
-
-        sys_accuracy = accuracy_score(y_true, y_pred)
-        sys_f1 = f1_score(y_true, y_pred, average='micro')
-        sys_precision = precision_score(y_true, y_pred, average='micro')
-        sys_recall = recall_score(y_true, y_pred, average='micro')
         y_true_bin = [1] * len(y_true)
         y_pred_bin = [1 if y_pred[i] == y_true[i]
                       else 0 for i in range(len(y_true))]
+
+        # sys_accuracy = accuracy_score(y_true, y_pred)
+        # sys_f1 = f1_score(y_true, y_pred, average='micro')
+        # sys_precision = precision_score(y_true, y_pred, average='micro')
+        # sys_recall = recall_score(y_true, y_pred, average='micro')
+        sys_accuracy = accuracy_score(y_true_bin, y_pred_bin)
+        sys_f1 = f1_score(y_true_bin, y_pred_bin)
+        sys_precision = precision_score(y_true_bin, y_pred_bin)
+        sys_recall = recall_score(y_true_bin, y_pred_bin)
+
         sys_conf_mat = confusion_matrix(y_true_bin, y_pred_bin)
 
         results[n_robot]['accuracy'].append(sys_accuracy)

@@ -347,7 +347,12 @@ class RecModelDataToMdEvalSys(RecModelDataToMdWithResampler):
             score = scores[metric]
             score_dict = {
                 'Mean': np.mean(score, axis=0),
-                'Standard deviation': np.std(score, axis=0)
+                'Standard deviation': np.std(score, axis=0),
+                'Max': np.amax(score, axis=0),
+                '75%': np.percentile(score, 75, axis=0),
+                'Median': np.median(score, axis=0),
+                '25%': np.percentile(score, 25, axis=0),
+                'Min': np.amin(score, axis=0),
             }
             output_str += (prefix + ' ' + metric + '\n')
             output_str += self.GetDictStr(score_dict)
@@ -415,9 +420,8 @@ class RecModelDataToMdEvalSys(RecModelDataToMdWithResampler):
                            'recall', 'facing_probas']
                 scores = self.results[i]
                 evaluation_str += self.GetEvaluationScore(scores, metrics, 4)
-                if(i < self.n - 1):
-                    evaluation_str += self.GetConfMat(
-                        self.results[i]['confusion_matrix'])
+                evaluation_str += self.GetConfMat(
+                    self.results[i]['confusion_matrix'])
 
             output_str += (consts_str + csv_str +
                            estimator_str + evaluation_str)
