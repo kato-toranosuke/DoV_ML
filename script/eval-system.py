@@ -179,39 +179,42 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.E
             target_angle = 45 * i
             robot_id = i + 1
 
-            X_test_target_onlyfacing = [X for X in X_test if (
+            # target_angleのみを抽出
+            X_test_facing_ang = [X for X in X_test if (
                 X['distance'] in consts.DISTANCE and X['angle'] == target_angle)]
-            X_test_target_all = [X for X in X_test if (
+            y_true_facing = [X.get('label')
+                             for X in X_test_facing_ang]
+            y_pred_facing = [X.get('label_pred')
+                             for X in X_test_facing_ang]
+            # all angleを抽出
+            X_test_all_ang = [X for X in X_test if (
                 X['distance'] in consts.DISTANCE)]
+            y_true_all = [X.get('label') for X in X_test_all_ang]
+            y_pred_all = [X.get('label_pred') for X in X_test_all_ang]
+            y_true_all_bin = [1 if y_true_all[j] ==
+                              robot_id else 0 for j in range(len(y_true_all))]
+            y_pred_all_bin = [1 if y_pred_all[j] == y_true_all[j]
+                              else 0 for j in range(len(y_true_all))]
 
-            y_true_onlyfacing = [X.get('label')
-                                 for X in X_test_target_onlyfacing]
-            y_pred_onlyfacing = [X.get('label_pred')
-                                 for X in X_test_target_onlyfacing]
-            y_true_all = [X.get('label') for X in X_test_target_all]
-            y_pred_all = [X.get('label_pred') for X in X_test_target_all]
             robot_probas = []
             for j in range(n_robot):
                 # robot毎のfacing probaを算出
                 facing_probas = [X['robot_data'][j]['probas'][1]
-                                 for X in X_test_target_onlyfacing]
+                                 for X in X_test_facing_ang]
                 mean_facing_proba = np.mean(facing_probas)
                 robot_probas.append(mean_facing_proba)
 
-            sys_accuracy = accuracy_score(y_true_all, y_pred_all)
-            sys_f1 = f1_score(y_true_all, y_pred_all, average='micro')
+            sys_accuracy = accuracy_score(y_true_all_bin, y_pred_all_bin)
+            sys_f1 = f1_score(y_true_all_bin, y_pred_all_bin, average='micro')
             sys_precision = precision_score(
-                y_true_all, y_pred_all, average='micro')
-            sys_recall = recall_score(y_true_all, y_pred_all, average='micro')
+                y_true_all_bin, y_pred_all_bin, average='micro')
+            sys_recall = recall_score(
+                y_true_all_bin, y_pred_all_bin, average='micro')
             # confusion matrix
-            y_true_bin_all = [1 if y_true_all[j] ==
-                              robot_id else 0 for j in range(len(y_true_all))]
-            y_pred_bin_all = [1 if y_pred_all[j] == y_true_all[j]
-                              else 0 for j in range(len(y_true_all))]
-            sys_conf_mat = confusion_matrix(y_true_bin_all, y_pred_bin_all)
+            sys_conf_mat = confusion_matrix(y_true_all_bin, y_pred_all_bin)
             # conf matがtpしかない場合の対応
-            if len(sys_conf_mat == 1):
-                sys_conf_mat = [[sys_conf_mat[0][0], 0], [0, 0]]
+            if len(sys_conf_mat) == 1:
+                sys_conf_mat = [[0, 0], [0, sys_conf_mat[0][0]]]
 
             results[i]['accuracy'].append(sys_accuracy)
             results[i]['f1'].append(sys_f1)
