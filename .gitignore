@@ -191,3 +191,4 @@ out/ml_model_fitting_result/ExtraTreesClassifier_ClusterCentroids_2021-11-04_no0
 
 # for Ubuntu
 nohup*.out
+ipynb/
