@@ -201,9 +201,17 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.E
 
             robot_probas = []
             for j in range(n_robot):
+                facing_probas = []
+                for X in X_test_facing_ang:
+                    if len(X['robot_data'][j]['probas']) < 2:
+                        print(f"[!!Error!!] {X}, robot_id: {j+1}")
+                        facing_probas.append(0)
+                    else:
+                        facing_probas.append(X['robot_data'][j]['probas'][1])
+
                 # robot毎のfacing probaを算出
-                facing_probas = [X['robot_data'][j]['probas'][1]
-                                 for X in X_test_facing_ang]
+                # facing_probas = [X['robot_data'][j]['probas'][1]
+                #                  for X in X_test_facing_ang]
                 mean_facing_proba = np.mean(facing_probas)
                 robot_probas.append(mean_facing_proba)
 
@@ -325,14 +333,19 @@ if __name__ == '__main__':
     ############################
     ### Searching Parameters ###
     ############################
-    label_attrbs = [['facing'], ['facing2']]
-    facing_dov_angles = [[1], [1, 2]]
-    angles = ['0', '45']
+    # label_attrbs = [['facing'], ['facing2']]
+    # facing_dov_angles = [[1], [1, 2]]
+    # angles = ['0', '45']
+    label_attrbs = [['facing2']]
+    facing_dov_angles = [[1, 2]]
+    angles = ['45']
 
     agc_statuses = [['AGC'], ['NoAGC']]
 
-    distances = [[1], [3], [5], [1, 3, 5]]
-    distances_name = ['1m', '3m', '5m', 'under5m']
+    # distances = [[1], [3], [5], [1, 3, 5]]
+    # distances_name = ['1m', '3m', '5m', 'under5m']
+    distances = [[1, 3, 5]]
+    distances_name = ['under5m']
 
     for i, label_attrb in enumerate(label_attrbs):
         for agc_status in agc_statuses:
