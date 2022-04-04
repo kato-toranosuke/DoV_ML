@@ -241,17 +241,20 @@ def FetchFeaturesFromExpDataset(DATASET_PATH: str, w: int, N: Union[int, str], o
     # raspi
     participant_ids = ['raspi-ubuntu-' + str(i) for i in range(1, 6)]
     # 日付
-    dates = ['2022-01-13']
+    dates = ['2022-03-23']
     # 状態
     statuses = ['standup']
     # AGC
-    agc_statuses = ['AGC', 'NoAGC']
+    # agc_statuses = ['AGC', 'NoAGC']
+    agc_statuses = ['AGC-30deg', 'AGC-15deg']
     # 距離
     distances = [1, 3, 5]
     # 角度
-    angles = [0, 45, 90, 135, 180]
+    # angles = [0, 45, 90, 135, 180]
+    angles_15deg = [i for i in range(60, 121, 15)]
+    angles_30deg = [i for i in range(30, 151, 30)]
     # セッション
-    session_ids = ['trial' + str(i) for i in range(1, 21)]
+    session_ids = ['trial' + str(i) for i in range(1, 35)]
 
     # GCC-PHAT, TDOA以外の計算に用いるマイクチャンネル(音声認識用に使用しているchannel0のみ特徴量抽出に利用する。)
     mic_channel = 0
@@ -270,6 +273,11 @@ def FetchFeaturesFromExpDataset(DATASET_PATH: str, w: int, N: Union[int, str], o
             for status in statuses:
                 for agc_status in agc_statuses:
                     for distance in distances:
+                        if agc_status == 'AGC-30deg':
+                            angles = angles_30deg
+                        elif agc_status == 'AGC-15deg':
+                            angles = angles_15deg
+
                         for angle in angles:
                             rows = []
                             for session_id in session_ids:
@@ -295,50 +303,50 @@ def FetchFeaturesFromExpDataset(DATASET_PATH: str, w: int, N: Union[int, str], o
                                 attr['mic_channel'] = mic_channel
 
                                 if participant_id == 'raspi-ubuntu-1':
-                                    if angle == 0:
+                                    if angle == angles[0]:
                                         attr['facing'] = 1
                                         attr['facing2'] = 1
-                                    elif angle == 45:
+                                    elif angle == angles[1]:
                                         attr['facing'] = 0
                                         attr['facing2'] = 2
                                     else:
                                         attr['facing'] = 0
                                         attr['facing2'] = 0
                                 elif participant_id == 'raspi-ubuntu-2':
-                                    if angle == 45:
+                                    if angle == angles[1]:
                                         attr['facing'] = 1
                                         attr['facing2'] = 1
-                                    elif angle == 0 or angle == 90:
+                                    elif angle == angles[0] or angle == angles[2]:
                                         attr['facing'] = 0
                                         attr['facing2'] = 2
                                     else:
                                         attr['facing'] = 0
                                         attr['facing2'] = 0
                                 elif participant_id == 'raspi-ubuntu-3':
-                                    if angle == 90:
+                                    if angle == angles[2]:
                                         attr['facing'] = 1
                                         attr['facing2'] = 1
-                                    elif angle == 45 or angle == 135:
+                                    elif angle == angle[1] or angle == angles[3]:
                                         attr['facing'] = 0
                                         attr['facing2'] = 2
                                     else:
                                         attr['facing'] = 0
                                         attr['facing2'] = 0
                                 elif participant_id == 'raspi-ubuntu-4':
-                                    if angle == 135:
+                                    if angle == angles[3]:
                                         attr['facing'] = 1
                                         attr['facing2'] = 1
-                                    elif angle == 90 or angle == 180:
+                                    elif angle == angles[2] or angle == angles[4]:
                                         attr['facing'] = 0
                                         attr['facing2'] = 2
                                     else:
                                         attr['facing'] = 0
                                         attr['facing2'] = 0
                                 elif participant_id == 'raspi-ubuntu-5':
-                                    if angle == 180:
+                                    if angle == angles[4]:
                                         attr['facing'] = 1
                                         attr['facing2'] = 1
-                                    elif angle == 135:
+                                    elif angle == angles[3]:
                                         attr['facing'] = 0
                                         attr['facing2'] = 2
                                     else:
