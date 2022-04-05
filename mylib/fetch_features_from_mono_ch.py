@@ -326,7 +326,7 @@ def FetchFeaturesFromExpDataset(DATASET_PATH: str, w: int, N: Union[int, str], o
                                     if angle == angles[2]:
                                         attr['facing'] = 1
                                         attr['facing2'] = 1
-                                    elif angle == angle[1] or angle == angles[3]:
+                                    elif angle == angles[1] or angle == angles[3]:
                                         attr['facing'] = 0
                                         attr['facing2'] = 2
                                     else:
