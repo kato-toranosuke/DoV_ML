@@ -274,6 +274,11 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.E
     record = rec.RecModelDataToMdEvalSys(
         consts, csv_list, best_resampler, best_estimator, results)
     record.write()
+
+    record_csv = rec.RecModelDataToCsvEvalSys(
+        consts, csv_list, best_resampler, best_estimator, results)
+    record_csv.write()
+
     print('Complete! Output the result to a file.')
 
 def ml_main(csv_list, consts):
@@ -340,7 +345,7 @@ if __name__ == '__main__':
     angles = ['0']
 
     # agc_statuses = [['AGC'], ['NoAGC']]
-    agc_statuses = ['AGC-30deg', 'AGC-15deg']
+    agc_statuses = [['AGC-30deg'], ['AGC-15deg']]
 
     distances = [[1], [3], [5], [1, 3, 5]]
     distances_name = ['1m', '3m', '5m', 'under5m']
