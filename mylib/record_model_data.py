@@ -477,3 +477,73 @@ class RecExpResultToMarkdown(RecModelDataToMarkdown):
             f.writelines(output_str)
 
         print(f'Complete!\nResult file is {result_file_path}')
+
+class RecModelDataToCsvEvalSys(RecModelDataToMdWithResampler):
+    def __init__(self, consts: ML_Consts, csv_list: List, best_resampler, best_estimator, results, n=6, csv_name="eval_system.csv") -> None:
+        super().__init__(consts, csv_list, best_resampler, best_estimator, None, None)
+        self.results = results
+        self.n = n
+        self.csv_path = '../out/experiment_result/data_of_2022-03-23_eval_system/' + csv_name
+        self.metrics = ['accuracy', 'f1',
+                        'precision', 'recall', 'facing_probas']
+
+    def write(self):
+        # ファイルが生成するか確認する
+        if not os.path.exists(self.csv_path):
+            print('create csv')
+            # 新規生成
+            with open(self.csv_path, mode='x', encoding='UTF-8') as f:
+                # ヘッダー行の記録
+                fst_line_str = 'Estimator,Resampler,Facing_Angle,Agc_Status,Distance,Robot_ID'
+                snd_line_str = ',,,,,'
+
+                for metric in self.metrics:
+                    fst_line_str += (',' + metric + ',,,,,,')
+                    snd_line_str += ',mean,sd,max,75%,median,25%,min'
+
+                fst_line_str += ',Facing Probability,,,,,Confusion Matrix,,,'
+                snd_line_str += ',robot-1,robot-2,robot-3,robot-4,robot-5,TN,FP,FN,TP'
+
+                f.write(fst_line_str + '\n')
+                f.write(snd_line_str + '\n')
+        else:
+            print('already create csv')
+            # 追記
+            with open(self.csv_path, mode='a', encoding='UTF-8') as f:
+                # 属性情報の文章(Robot_IDより前)
+                status_info = self.best_estimator.__class__.__name__ + ',' + self.best_resampler.__class__.__name__ + ',' + \
+                    '/'.join(map(str, self.consts.FACING_DOV_ANGLES)) + ',' + '/'.join(
+                        self.consts.AGC_STATUS) + ',' + '/'.join(map(str, map(self.consts.DISTANCE)))
+
+                # 各行を記録する -> 各ロボットの評価値（Robot_ID以後）
+                for i, result in enumerate(self.results):
+                    # Robot_IDまでの情報
+                    line_str = status_info + ',' + str(i + 1)
+
+                    # 各評価指標の評価値
+                    for metric in self.metrics:
+                        score = result[metric]
+                        score_dict = {
+                            'mean': np.mean(score, axis=0),
+                            'sd': np.std(score, axis=0),
+                            'max': np.amax(score, axis=0),
+                            '75%': np.percentile(score, 75, axis=0),
+                            'median': np.median(score, axis=0),
+                            '25%': np.percentile(score, 25, axis=0),
+                            'min': np.amin(score, axis=0),
+                        }
+
+                        if metric != 'facing_probas':
+                            line_str += (',' + score_dict['mean'] + ',' + score_dict['sd'] + ',' + score_dict['max'] + ',' +
+                                         score_dict['75%'] + ',' + score_dict['median'] + ',' + score_dict['25%'] + ',' + score_dict['min'])
+                        else:
+                            # Facing Probas
+                            for d in score_dict['mean']:
+                                line_str += (',' + d)
+
+                    # Confusion Matrix
+                    conf_mat = result['confusion_matrix']
+                    line_str += (conf_mat[0][0] + ',' + conf_mat[0]
+                                 [1] + ',' + conf_mat[1][0] + ',' + conf_mat[1][1])
+
+                    f.write(line_str + '\n')
