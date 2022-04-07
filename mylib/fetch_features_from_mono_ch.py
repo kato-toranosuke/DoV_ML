@@ -239,7 +239,7 @@ def FetchFeaturesFromExpDataset(DATASET_PATH: str, w: int, N: Union[int, str], o
     ### 各種パラメータ ###
     ####################
     # raspi
-    participant_ids = ['raspi-ubuntu-' + str(i) for i in range(1, 6)]
+    participant_ids = ['raspi-ubuntu-' + str(i) for i in range(2, 3)]
     # 日付
     dates = ['2022-03-23']
     # 状態
