@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-from mylib.fetch_features_func import FitFFT
-
-
 class ML_Consts():
     '''
     機械学習に用いる定数を定義するクラス
