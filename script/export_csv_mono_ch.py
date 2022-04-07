@@ -14,7 +14,7 @@ from mylib.load_constants import ML_Consts
 # 出力ファイルへのパス
 OUTPUT_PATH = "../out/csv/experiment"
 # データセットへのパス
-DATASET_PATH = "../../experiment_dataset/2022-01-13_gym"
+DATASET_PATH = "../../experiment_dataset/2022-03-23_gym/cp"
 
 def createWav2Csv(output_csv_filename: str, dataset_path: str = DATASET_PATH, output_path: str = OUTPUT_PATH, w: int = 1, N: int = 2**12, overlap: int = 80) -> None:
     '''

@@ -314,8 +314,7 @@ def ml_main(csv_list, consts):
 
 
 if __name__ == '__main__':
-    csv_list = ['2021-12-27_AGC.csv', '2022-01-10_NoAGC.csv',
-                '2022-01-13_raspi_48000Hz_w1_N2^12_overlap80.csv']
+    csv_list = ['2022-03-23_raspi_48000Hz_w1_N2^12_overlap80_all.csv']
     # 定数の設定
     # 探索パラメータ
     # range(100, 1600, 100) 使える
@@ -336,21 +335,20 @@ if __name__ == '__main__':
     # label_attrbs = [['facing'], ['facing2']]
     # facing_dov_angles = [[1], [1, 2]]
     # angles = ['0', '45']
-    label_attrbs = [['facing2']]
-    facing_dov_angles = [[1, 2]]
-    angles = ['45']
+    label_attrbs = [['facing']]
+    facing_dov_angles = [[1]]
+    angles = ['0']
 
-    agc_statuses = [['AGC'], ['NoAGC']]
+    # agc_statuses = [['AGC'], ['NoAGC']]
+    agc_statuses = ['AGC-30deg', 'AGC-15deg']
 
-    # distances = [[1], [3], [5], [1, 3, 5]]
-    # distances_name = ['1m', '3m', '5m', 'under5m']
-    distances = [[1, 3, 5]]
-    distances_name = ['under5m']
+    distances = [[1], [3], [5], [1, 3, 5]]
+    distances_name = ['1m', '3m', '5m', 'under5m']
 
     for i, label_attrb in enumerate(label_attrbs):
         for agc_status in agc_statuses:
             for j, distance in enumerate(distances):
-                output_path = '../out/experiment_result/data_of_2022-01-13_eval_system/' + \
+                output_path = '../out/experiment_result/data_of_2022-03-23_eval_system/' + \
                     agc_status[0] + '-' + angles[i] + \
                     'angle-' + distances_name[j]
                 os.makedirs(output_path, exist_ok=True)
