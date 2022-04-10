@@ -488,10 +488,9 @@ class RecModelDataToCsvEvalSys(RecModelDataToMdWithResampler):
                         'precision', 'recall', 'facing_probas']
 
     def write(self):
-        # ファイルが生成するか確認する
+        # 新規生成
         if not os.path.exists(self.csv_path):
-            print('create csv')
-            # 新規生成
+            print('[Eval System] create csv')
             with open(self.csv_path, mode='x', encoding='UTF-8') as f:
                 # ヘッダー行の記録
                 fst_line_str = 'Estimator,Resampler,Facing_Angle,Agc_Status,Distance,Robot_ID'
@@ -506,44 +505,44 @@ class RecModelDataToCsvEvalSys(RecModelDataToMdWithResampler):
 
                 f.write(fst_line_str + '\n')
                 f.write(snd_line_str + '\n')
-        else:
-            print('already create csv')
-            # 追記
-            with open(self.csv_path, mode='a', encoding='UTF-8') as f:
-                # 属性情報の文章(Robot_IDより前)
-                status_info = self.best_estimator.__class__.__name__ + ',' + self.best_resampler.__class__.__name__ + ',' + \
-                    '/'.join(map(str, self.consts.FACING_DOV_ANGLES)) + ',' + '/'.join(
-                        self.consts.AGC_STATUS) + ',' + '/'.join(map(str, map(self.consts.DISTANCE)))
 
-                # 各行を記録する -> 各ロボットの評価値（Robot_ID以後）
-                for i, result in enumerate(self.results):
-                    # Robot_IDまでの情報
-                    line_str = status_info + ',' + str(i + 1)
+        print('[Eval System] add new data to csv.')
+        # 追記
+        with open(self.csv_path, mode='a', encoding='UTF-8') as f:
+            # 属性情報の文章(Robot_IDより前)
+            status_info = self.best_estimator.__class__.__name__ + ',' + self.best_resampler.__class__.__name__ + ',' + \
+                '/'.join(map(str, self.consts.FACING_DOV_ANGLES)) + ',' + '/'.join(
+                    self.consts.AGC_STATUS) + ',' + '/'.join(map(str, map(self.consts.DISTANCE)))
 
-                    # 各評価指標の評価値
-                    for metric in self.metrics:
-                        score = result[metric]
-                        score_dict = {
-                            'mean': np.mean(score, axis=0),
-                            'sd': np.std(score, axis=0),
-                            'max': np.amax(score, axis=0),
-                            '75%': np.percentile(score, 75, axis=0),
-                            'median': np.median(score, axis=0),
-                            '25%': np.percentile(score, 25, axis=0),
-                            'min': np.amin(score, axis=0),
-                        }
+            # 各行を記録する -> 各ロボットの評価値（Robot_ID以後）
+            for i, result in enumerate(self.results):
+                # Robot_IDまでの情報
+                line_str = status_info + ',' + str(i + 1)
 
-                        if metric != 'facing_probas':
-                            line_str += (',' + score_dict['mean'] + ',' + score_dict['sd'] + ',' + score_dict['max'] + ',' +
-                                         score_dict['75%'] + ',' + score_dict['median'] + ',' + score_dict['25%'] + ',' + score_dict['min'])
-                        else:
-                            # Facing Probas
-                            for d in score_dict['mean']:
-                                line_str += (',' + d)
+                # 各評価指標の評価値
+                for metric in self.metrics:
+                    score = result[metric]
+                    score_dict = {
+                        'mean': np.mean(score, axis=0),
+                        'sd': np.std(score, axis=0),
+                        'max': np.amax(score, axis=0),
+                        '75%': np.percentile(score, 75, axis=0),
+                        'median': np.median(score, axis=0),
+                        '25%': np.percentile(score, 25, axis=0),
+                        'min': np.amin(score, axis=0),
+                    }
 
-                    # Confusion Matrix
-                    conf_mat = result['confusion_matrix']
-                    line_str += (conf_mat[0][0] + ',' + conf_mat[0]
-                                 [1] + ',' + conf_mat[1][0] + ',' + conf_mat[1][1])
+                    if metric != 'facing_probas':
+                        line_str += (',' + score_dict['mean'] + ',' + score_dict['sd'] + ',' + score_dict['max'] + ',' +
+                                     score_dict['75%'] + ',' + score_dict['median'] + ',' + score_dict['25%'] + ',' + score_dict['min'])
+                    else:
+                        # Facing Probas
+                        for d in score_dict['mean']:
+                            line_str += (',' + d)
 
-                    f.write(line_str + '\n')
+                # Confusion Matrix
+                conf_mat = result['confusion_matrix']
+                line_str += (conf_mat[0][0] + ',' + conf_mat[0]
+                             [1] + ',' + conf_mat[1][0] + ',' + conf_mat[1][1])
+
+                f.write(line_str + '\n')
