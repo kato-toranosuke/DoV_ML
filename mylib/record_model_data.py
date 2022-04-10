@@ -512,7 +512,7 @@ class RecModelDataToCsvEvalSys(RecModelDataToMdWithResampler):
             # 属性情報の文章(Robot_IDより前)
             status_info = self.best_estimator.__class__.__name__ + ',' + self.best_resampler.__class__.__name__ + ',' + \
                 '/'.join(map(str, self.consts.FACING_DOV_ANGLES)) + ',' + '/'.join(
-                    self.consts.AGC_STATUS) + ',' + '/'.join(map(str, map(self.consts.DISTANCE)))
+                    self.consts.AGC_STATUS) + ',' + '/'.join(map(str, self.consts.DISTANCE))
 
             # 各行を記録する -> 各ロボットの評価値（Robot_ID以後）
             for i, result in enumerate(self.results):
@@ -532,17 +532,22 @@ class RecModelDataToCsvEvalSys(RecModelDataToMdWithResampler):
                         'min': np.amin(score, axis=0),
                     }
 
-                    if metric != 'facing_probas':
-                        line_str += (',' + score_dict['mean'] + ',' + score_dict['sd'] + ',' + score_dict['max'] + ',' +
-                                     score_dict['75%'] + ',' + score_dict['median'] + ',' + score_dict['25%'] + ',' + score_dict['min'])
-                    else:
-                        # Facing Probas
-                        for d in score_dict['mean']:
-                            line_str += (',' + d)
+                    line_str += (',' + str(score_dict['mean']) + ',' + str(score_dict['sd']) + ',' + str(score_dict['max']) + ',' +
+                                 str(score_dict['75%']) + ',' + str(score_dict['median']) + ',' + str(score_dict['25%']) + ',' + str(score_dict['min']))
+
+                    # facing probaのmeanのみを切り出す
+                    if metric == 'facing_probas':
+                        if type(score_dict['mean']) == np.ndarray:
+                            for d in score_dict['mean']:
+                                line_str += (',' + str(d))
+                        else:
+                            line_str += (',' +
+                                         str(score_dict['mean']) + ',,,,')
 
                 # Confusion Matrix
-                conf_mat = result['confusion_matrix']
-                line_str += (conf_mat[0][0] + ',' + conf_mat[0]
-                             [1] + ',' + conf_mat[1][0] + ',' + conf_mat[1][1])
+                conf_mats = result['confusion_matrix']
+                conf_mat = np.mean(conf_mats, axis=0)
+                line_str += (',' + str(conf_mat[0][0]) + ',' + str(conf_mat[0]
+                                                                   [1]) + ',' + str(conf_mat[1][0]) + ',' + str(conf_mat[1][1]))
 
                 f.write(line_str + '\n')
