@@ -324,8 +324,8 @@ if __name__ == '__main__':
     # 探索パラメータ
     # range(100, 1600, 100) 使える
     # param_grid = [
-    #     {'est__n_estimators': range(10, 1000, 25), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
-    #         'sqrt', 'log2', None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]},
+    #     {'est__n_estimators': [10, 20], 'est__min_samples_split': [5], 'est__min_samples_leaf': [5], 'est__max_features': [
+    #         'log2'], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.09]},
     # ]
     param_grid = [
         {'est__n_estimators': range(10, 400, 20), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
