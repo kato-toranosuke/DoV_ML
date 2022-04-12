@@ -124,11 +124,13 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.E
         # 正解ラベルを作成する
         X_test = []
         for d in consts.DISTANCE:
-            for angle in range(0, 181, 45):
+            for angle in consts.ANGLES:
                 for session in test_set_session:
                     # 5台分をまとめた辞書型
+                    # labelはfacingとするrobotのid
+                    # robot_dataには、各ロボットの特徴量の配列となる
                     X = {'distance': d, 'angle': angle,
-                         'robot_data': [], 'label': int(angle / 45) + 1}
+                         'robot_data': [], 'label': int((angle - consts.ANGLES[0]) / (consts.ANGLES[1] - consts.ANGLES[0])) + 1}
                     for robot_id in range(1, n_robot + 1):
                         robot_item = {'robot_id': robot_id}
                         robot_df = test_set[(test_set['session_id'] == session) & (
@@ -179,25 +181,45 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.E
         ##################
         # Robot1~5毎の単体精度
         for i in range(n_robot):
-            target_angle = 45 * i
+            target_angle = (
+                consts.ANGLES[1] - consts.ANGLES[0]) * i + consts.ANGLES[0]
             robot_id = i + 1
+
+            print(f'\ntarget_angle:{target_angle}, robot_id:{robot_id}')
 
             # target_angleのみを抽出
             X_test_facing_ang = [X for X in X_test if (
                 X['distance'] in consts.DISTANCE and X['angle'] == target_angle)]
             y_true_facing = [X.get('label')
                              for X in X_test_facing_ang]
+            # print('y_true_facing')
+            # print(y_true_facing)
+
             y_pred_facing = [X.get('label_pred')
                              for X in X_test_facing_ang]
+            # print('y_pred_facing')
+            # print(y_pred_facing)
+
             # all angleを抽出
             X_test_all_ang = [X for X in X_test if (
                 X['distance'] in consts.DISTANCE)]
             y_true_all = [X.get('label') for X in X_test_all_ang]
             y_pred_all = [X.get('label_pred') for X in X_test_all_ang]
+
+            print('y_true_all')
+            print(y_true_all)
+            print('y_pred_all')
+            print(y_pred_all)
+
             y_true_all_bin = [1 if y_true_all[j] ==
                               robot_id else 0 for j in range(len(y_true_all))]
             y_pred_all_bin = [1 if y_pred_all[j] ==
                               robot_id else 0 for j in range(len(y_true_all))]
+
+            print('y_true_all_bin')
+            print(y_true_all_bin)
+            print('y_pred_all_bin')
+            print(y_pred_all_bin)
 
             robot_probas = []
             for j in range(n_robot):
@@ -269,8 +291,8 @@ def main(csv_filename_list: List, estimator, resampler, consts: load_constants.E
     ### 結果の出力 ###
     ################
     print('Results')
-    for i, res in enumerate(results):
-        print(f'{i}: {res}')
+    # for i, res in enumerate(results):
+    #     print(f'{i}: {res}')
     record = rec.RecModelDataToMdEvalSys(
         consts, csv_list, best_resampler, best_estimator, results)
     record.write()
@@ -323,43 +345,46 @@ if __name__ == '__main__':
     # 定数の設定
     # 探索パラメータ
     # range(100, 1600, 100) 使える
-    # param_grid = [
-    #     {'est__n_estimators': [10, 20], 'est__min_samples_split': [5], 'est__min_samples_leaf': [5], 'est__max_features': [
-    #         'log2'], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.09]},
-    # ]
     param_grid = [
-        {'est__n_estimators': range(10, 400, 20), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
-            'sqrt', 'log2', None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]},
-        {'est__n_estimators': range(10, 400, 20), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
-            'sqrt', 'log2', None], 'est__bootstrap': [True], 'est__oob_score': [True, False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]}
+        {'est__n_estimators': [10, 20], 'est__min_samples_split': [5], 'est__min_samples_leaf': [5], 'est__max_features': [
+            'log2'], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.09]},
     ]
+    # param_grid = [
+    #     {'est__n_estimators': range(10, 400, 20), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+    #         'sqrt', 'log2', None], 'est__bootstrap': [False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]},
+    #     {'est__n_estimators': range(10, 400, 20), 'est__min_samples_split': [2, 5, 10], 'est__min_samples_leaf': [1, 5, 10], 'est__max_features': [
+    #         'sqrt', 'log2', None], 'est__bootstrap': [True], 'est__oob_score': [True, False], 'est__n_jobs': [-1], 'est__random_state': [42], 'est__max_samples': [0.01, 0.5, 0.09]}
+    # ]
 
     ############################
     ### Searching Parameters ###
     ############################
     # label_attrbs = [['facing'], ['facing2']]
     # facing_dov_angles = [[1], [1, 2]]
-    # angles = ['0', '45']
+    # facing_angle_ranges = ['0', '45']
     label_attrbs = [['facing']]
     facing_dov_angles = [[1]]
-    angles = ['0']
+    facing_angle_ranges = ['0']
 
     # agc_statuses = [['AGC'], ['NoAGC']]
     agc_statuses = [['AGC-30deg'], ['AGC-15deg']]
+    angles = [[30, 60, 90, 120, 150], [60, 75, 90, 105, 120]]
+    # agc_statuses = [['AGC-15deg']]
+    # angles = [[60, 75, 90, 105, 120]]
 
     distances = [[1], [3], [5], [1, 3, 5]]
     distances_name = ['1m', '3m', '5m', 'under5m']
 
     for i, label_attrb in enumerate(label_attrbs):
-        for agc_status in agc_statuses:
+        for k, agc_status in enumerate(agc_statuses):
             for j, distance in enumerate(distances):
                 output_path = '../out/experiment_result/data_of_2022-03-23_eval_system/' + \
-                    agc_status[0] + '-' + angles[i] + \
+                    agc_status[0] + '-' + facing_angle_ranges[i] + \
                     'angle-' + distances_name[j]
                 os.makedirs(output_path, exist_ok=True)
 
                 hp_set_session = ['trial1', 'trial21']
                 consts = load_constants.Eval_Sys_Consts(param_grid=param_grid, label_attrb=label_attrb, facing_dov_angles=facing_dov_angles[i], csv_path='../out/csv/experiment', ncv=8,
-                                                        hp_set_session=hp_set_session, test_set_session=None, train_set_session=None, output_path=output_path, distance=distance, agc_status=agc_status)
+                                                        hp_set_session=hp_set_session, test_set_session=None, train_set_session=None, output_path=output_path, distance=distance, agc_status=agc_status, angles=angles[k])
 
                 ml_main(csv_list, consts)
