@@ -367,13 +367,15 @@ if __name__ == '__main__':
     facing_angle_ranges = ['0']
 
     # agc_statuses = [['AGC'], ['NoAGC']]
-    agc_statuses = [['AGC-30deg'], ['AGC-15deg']]
-    angles = [[30, 60, 90, 120, 150], [60, 75, 90, 105, 120]]
-    # agc_statuses = [['AGC-15deg']]
-    # angles = [[60, 75, 90, 105, 120]]
+    # agc_statuses = [['AGC-30deg'], ['AGC-15deg']]
+    # angles = [[30, 60, 90, 120, 150], [60, 75, 90, 105, 120]]
+    agc_statuses = [['AGC-15deg']]
+    angles = [[60, 75, 90, 105, 120]]
 
-    distances = [[1], [3], [5], [1, 3, 5]]
-    distances_name = ['1m', '3m', '5m', 'under5m']
+    # distances = [[1], [3], [5], [1, 3, 5]]
+    # distances_name = ['1m', '3m', '5m', 'under5m']
+    distances = [[3], [5], [3, 5]]
+    distances_name = ['3m', '5m', '3and5m']
 
     for i, label_attrb in enumerate(label_attrbs):
         for k, agc_status in enumerate(agc_statuses):
