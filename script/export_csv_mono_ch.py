@@ -166,6 +166,7 @@ def createCsvGp(filename: str, consts: ML_Consts = None) -> None:
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         filename = sys.argv[1]
-        createWav2Csv(filename)
+        # FFTのフレームサイズを512(=約10.6ms, fs=48kHzの場合)、overlap率75%
+        createWav2Csv(filename, N=512, overlap=75)
     else:
         createCsvGp()
