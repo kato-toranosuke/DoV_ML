@@ -5,6 +5,7 @@ from librosa import times_like, feature
 import os
 import glob
 import sys
+import json
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from mylib.cis import wavread, wavwrite
@@ -72,7 +73,7 @@ def wiener(wave, fs, s_t, e_t, alpha=1.0, mu=10):
                             window='hann', nperseg=512, noverlap=384)
     return (t, data_post)
 
-def clipMain(wav_fpath, dB_th, skip=False, **args):
+def clipMain(wav_fpath, dB_th, wiener_alpha, wiener_mu, skip=False, **args):
     # 音声ファイルの読み込み
     wave, fs = wavread(wav_fpath)
 
@@ -107,7 +108,8 @@ def clipMain(wav_fpath, dB_th, skip=False, **args):
         noise_e_t = args['noise_e_t']
 
     # ウィナーフィルタをかける
-    t_filtered, wave_filtered = wiener(wave, fs, noise_s_t, noise_e_t)
+    t_filtered, wave_filtered = wiener(
+        wave, fs, noise_s_t, noise_e_t, alpha=wiener_alpha, mu=wiener_mu)
 
     # 音声をclipする
     s_idx, e_idx = cnvTimeToIdx(t_filtered, s_t, e_t)
@@ -123,33 +125,61 @@ if __name__ == '__main__':
     DATASET_PATH = '/Users/toranosuke/Desktop/experiment_dataset/2022-03-23_gym/cp'
     OUTPUT_DIR_PATH = '/Users/toranosuke/Desktop/experiment_dataset/2022-03-23_gym/filtered_and_clipped'
     FILE_NAME_PREFIX = 'rec_'
-    DB_TH = -40
+    DB_TH = 40
+    ALPHA = 1.0
+    MU = 10
 
     #######################
     ### Filter and Clip ###
     #######################
     id = 0
-    for p in glob.iglob(DATASET_PATH + '/*/*/'):
-        # output用ディレクトリを作成
-        output_path = OUTPUT_DIR_PATH + p[len(DATASET_PATH):]
-        output_path = f'{OUTPUT_DIR_PATH}/{DB_TH}dB{p[len(DATASET_PATH):]}'
-        os.makedirs(output_path, exist_ok=True)
+    err_lists = {
+        'no_clipping': [],
+        'all_clipping': []
+    }
+    try:
+        for p in glob.iglob(DATASET_PATH + '/*/*/'):
+            # output用ディレクトリを作成
+            output_path = OUTPUT_DIR_PATH + p[len(DATASET_PATH):]
+            output_path = f'{OUTPUT_DIR_PATH}/{DB_TH}dB_ALPHA{ALPHA}_MU{MU}{p[len(DATASET_PATH):]}'
+            os.makedirs(output_path, exist_ok=True)
 
-        # 処理
-        for i in range(6):
-            in_file_path = p + FILE_NAME_PREFIX + str(i) + '.wav'
-            out_file_path = output_path + FILE_NAME_PREFIX + str(i) + '.wav'
+            # 処理
+            for i in range(6):
+                in_file_path = p + FILE_NAME_PREFIX + str(i) + '.wav'
+                out_file_path = output_path + \
+                    FILE_NAME_PREFIX + str(i) + '.wav'
 
-            if i == 0:
-                wave, fs, s_t, e_t, noise_s_t, noise_e_t = clipMain(
-                    in_file_path, DB_TH)
-                print(f'{s_t}, {e_t}, {noise_s_t}, {noise_e_t}')
-            else:
-                wave, fs, _, _, _, _ = clipMain(
-                    in_file_path, DB_TH, True, s_t=s_t, e_t=e_t, noise_s_t=noise_s_t, noise_e_t=noise_e_t)
+                if i == 0:
+                    wave, fs, s_t, e_t, noise_s_t, noise_e_t = clipMain(
+                        in_file_path, DB_TH, ALPHA, MU)
+                    # エラーリストへの追加
+                    if noise_s_t == noise_e_t:
+                        err_lists['no_clipping'].append(output_path)
+                    if s_t == e_t:
+                        err_lists['all_clipping'].append(output_path)
+                else:
+                    wave, fs, _, _, _, _ = clipMain(
+                        in_file_path, DB_TH, ALPHA, MU, True, s_t=s_t, e_t=e_t, noise_s_t=noise_s_t, noise_e_t=noise_e_t)
 
-            # ファイルの保存
-            wavwrite(out_file_path, wave, fs)
+                # ファイルの保存
+                wavwrite(out_file_path, wave, fs)
 
-        print(f'[id:{id}] audio filles has been completed: {output_path}')
-        id = id + 1
+            print(f'[id:{id}] audio filles has been completed: {output_path}')
+            id = id + 1
+    finally:
+        # 設定ファイルへ書き出し
+        with open(f'{OUTPUT_DIR_PATH}/{DB_TH}dB_ALPHA{ALPHA}_MU{MU}/config.json', 'w') as f:
+            config_data = {
+                'dataset_path': {DATASET_PATH},
+                'output_dir_path': {OUTPUT_DIR_PATH},
+                'db_th': {DB_TH},
+                'wiener_filter': {
+                    'alpha': {ALPHA},
+                    'mu': {MU}
+                },
+                'err_lists': err_lists
+            }
+            json.dump(config_data, f, indent=2)
+            print(
+                f'dump config file to {OUTPUT_DIR_PATH}/{DB_TH}dB_ALPHA{ALPHA}_MU{MU}/config.json')
