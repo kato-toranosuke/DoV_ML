@@ -1,10 +1,13 @@
 import wave as wave
 import numpy as np
 import scipy.signal as sp
-from cis import wavread, wavwrite
-import librosa
+from librosa import times_like, feature
 import os
 import glob
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from mylib.cis import wavread, wavwrite
 
 # 閾値以下の音声区間の抽出
 # start time, end timeを返す
@@ -76,11 +79,11 @@ def clipMain(wav_fpath, dB_th, skip=False, **args):
     if not skip:
         tlen = len(wave) / fs
         # rmsを計算
-        rms = librosa.feature.rms(y=wave)
+        rms = feature.rms(y=wave)
         # rms -> 振幅に変換
         volume_dB = 20 * np.log10(rms[0] * 2**(1 / 2))
         # 時間配列の生成
-        times_rms = librosa.times_like(rms, sr=fs)  # rmsにおける時間軸
+        times_rms = times_like(rms, sr=fs)  # rmsにおける時間軸
         times_wave = np.arange(0, len(wave) / fs, 1 / fs)  # wavファイルの時間軸
 
         # dBを基準に音声をクリップする
@@ -120,6 +123,7 @@ if __name__ == '__main__':
     DATASET_PATH = '/Users/toranosuke/Desktop/experiment_dataset/2022-03-23_gym/cp'
     OUTPUT_DIR_PATH = '/Users/toranosuke/Desktop/experiment_dataset/2022-03-23_gym/filtered_and_clipped'
     FILE_NAME_PREFIX = 'rec_'
+    DB_TH = -40
 
     #######################
     ### Filter and Clip ###
@@ -128,6 +132,7 @@ if __name__ == '__main__':
     for p in glob.iglob(DATASET_PATH + '/*/*/'):
         # output用ディレクトリを作成
         output_path = OUTPUT_DIR_PATH + p[len(DATASET_PATH):]
+        output_path = f'{OUTPUT_DIR_PATH}/{DB_TH}dB{p[len(DATASET_PATH):]}'
         os.makedirs(output_path, exist_ok=True)
 
         # 処理
@@ -137,10 +142,14 @@ if __name__ == '__main__':
 
             if i == 0:
                 wave, fs, s_t, e_t, noise_s_t, noise_e_t = clipMain(
-                    in_file_path, 20)
+                    in_file_path, DB_TH)
+                print(f'{s_t}, {e_t}, {noise_s_t}, {noise_e_t}')
             else:
                 wave, fs, _, _, _, _ = clipMain(
-                    in_file_path, 20, True, s_t=s_t, e_t=e_t, noise_s_t=noise_s_t, noise_e_t=noise_e_t)
+                    in_file_path, DB_TH, True, s_t=s_t, e_t=e_t, noise_s_t=noise_s_t, noise_e_t=noise_e_t)
 
             # ファイルの保存
             wavwrite(out_file_path, wave, fs)
+
+        print(f'[id:{id}] audio filles has been completed: {output_path}')
+        id = id + 1
